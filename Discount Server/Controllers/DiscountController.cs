@@ -39,27 +39,26 @@ namespace Discount_Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<List<ProductInfoModel>> GetProducts()
         {
-            List<ProductInfoModel> listProducts = new();
-            foreach (var item in _db.ShopInfo.ToList())
-            {
-                listProducts.AddRange(item.Products.ConvertAll(ProductInfo.ToProductInfoModel));
-            }
-            
-
-            return  listProducts;
+            return  (await _db.ProductInfo.ToListAsync()).ConvertAll(ProductInfo.ToProductInfoModel);
         }
         [HttpGet]
         [Route("Products/{ShopName}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<List<ProductInfoModel>> GetProducts(string ShopName)
         {
-            List<ProductInfoModel> listProducts = new();
-            foreach (var item in _db.ShopInfo.ToList())
+            var productList = _db.ShopInfo.Include(p => p.Products).AsNoTracking()
+                .Where((shop) => shop.Shop_Name == ShopName).FirstOrDefault();
+            if (productList == null)
             {
-                listProducts.AddRange(item.Products.ConvertAll(ProductInfo.ToProductInfoModel));
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return new List<ProductInfoModel>();
             }
-
-            return _db.ShopInfo.Where(p => p.Shop_Name == ShopName).FirstOrDefault().Products.ConvertAll(ProductInfo.ToProductInfoModel);
+            else
+            {
+                return productList.Products.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
+            }
+            
+               
         }
     }
 }

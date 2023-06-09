@@ -27,7 +27,7 @@ namespace Discount_Server
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) 
         {
-            modelBuilder.Entity<ShopInfo>().HasIndex(u => u.Shop_Name).IsUnique();
+            //modelBuilder.Entity<ShopInfo>().HasIndex(u => u.Shop_Name).IsUnique();
         }
 
 

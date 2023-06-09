@@ -37,10 +37,11 @@ namespace Discount_Server.Services
                 var db =
                     scope.ServiceProvider
                         .GetRequiredService<ApplicationDataBaseContext>();
-
+                var dbList = db.ShopInfo.ToList();
                 foreach (var item in list)
                 {
-                    if (!db.ShopInfo.AsNoTracking().Contains(item)) await db.ShopInfo.AddAsync(item);
+                    if (!dbList.Contains<ShopInfo>(item))
+                        await db.AddAsync(item);
                 }
                 await db.SaveChangesAsync();
             }
@@ -60,7 +61,7 @@ namespace Discount_Server.Services
             {
                 var db = scope.ServiceProvider
                         .GetRequiredService<ApplicationDataBaseContext>();
-
+                await db.ProductInfo.ExecuteDeleteAsync();
                 foreach (var item in db.ShopInfo.ToList())
                 {
                     var list = _parser.GetProductList(ShopInfo.ToShopInfoModel(item))?.ConvertAll(ProductInfoModel.ToProductInfo);
@@ -68,9 +69,7 @@ namespace Discount_Server.Services
                     {
                         return;
                     }
-                    
                     item.Products = list;
-                    
                     await db.SaveChangesAsync();
                 }
 
