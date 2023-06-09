@@ -1,20 +1,27 @@
 ﻿using Discount_Server.ViewModels;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Discount_Server.Models
 {
+
+    [Index("Shop_Name", IsUnique = true)]
     public class ShopInfo
     {
-        [Key]
-        public int ShopId { get; set; }
+        public int ShopInfoId { get; set; }
         public int Shop_Code { get; set; }
-        public string? Name { get; set; } = null!;
-        public string Url { get; set; } = null!;
+        
+        public string? Shop_Name { get; set; }
+        public string? Url { get; set; }
 
-        public static Converter<ShopInfo, ShopInfoModel> ToShopInfoModel = 
+        public List<ProductInfo?>? Products { get; set; } = new List<ProductInfo?>();
+
+        [NotMapped]
+        public static Converter<ShopInfo, ShopInfoModel> ToShopInfoModel =
             (obj) => new ShopInfoModel()
             {
-                Name = obj.Name,
+                Name = obj.Shop_Name,
                 Url = obj.Url,
                 Shop_Code = obj.Shop_Code
             };

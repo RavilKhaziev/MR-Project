@@ -12,20 +12,27 @@ using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Discount_Server;
 using Discount_Server.Services;
+using Newtonsoft.Json;
+using Discount_Server.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string? connection = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddSwaggerGen();
+string? connection = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddMvc();
 
 builder.Services.AddControllers();
 
+
 builder.Services.AddDbContext<ApplicationDataBaseContext>(options => options.UseSqlite(connection));
 
-builder.Services.AddHttpClient<ParserService>();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddHostedService<ParserService>();
+
+
+//builder.Services.AddHostedService<TimedHostedService>();
 
 var app = builder.Build();
 
@@ -48,6 +55,8 @@ app.UseStaticFiles();
 app.MapControllerRoute(
     name : "default",
     pattern: "{controller=Discount}/{action=Shops}/{id?}");
+
+
 
 
 app.Run();
