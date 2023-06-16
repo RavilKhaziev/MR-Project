@@ -24,6 +24,14 @@ namespace Discount_Server
 
         //return products
         public List<ProductInfoModel> GetProductList(ShopInfoModel shop);
+        /// <summary> 
+        /// Функция запрашивает у парсера, все доступные категории товаров для парсера.
+        /// </summary>
+        /// <returns>Лист названий категорий.</returns>
+        public List<string> GetProductsCategory()
+        {
+            throw new NotImplementedException();
+        }
 
     }
 

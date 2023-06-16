@@ -18,7 +18,6 @@ namespace Discount_Server.Services
         ulong _executionCount = 0;
         double _updateFrequency = 10000;
 
-
         public ParserService(ILogger<ParserService> logger, IServiceProvider serviceProvider)
         {
             _logger = logger;

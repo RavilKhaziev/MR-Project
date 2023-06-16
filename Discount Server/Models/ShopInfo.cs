@@ -16,7 +16,7 @@ namespace Discount_Server.Models
         public string? Shop_Name { get; set; }
         public string? Url { get; set; }
 
-        public List<ProductInfo>? Products { get; set; } = new List<ProductInfo?>();
+        public List<ProductInfo?>? Products { get; set; } = new List<ProductInfo?>();
 
         [NotMapped]
         public static Converter<ShopInfo, ShopInfoModel> ToShopInfoModel =
