@@ -4,23 +4,39 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Discount_Server.ViewModels
 {
+    /// <summary>
+    /// Информация о продукте
+    /// </summary>
     public class ProductInfoModel
     {
-        // Название продукта
+        /// <summary>
+        /// Название продукта
+        /// </summary>
         public string? Name { get; set; } = null!;
 
-        // Его описание - может быть пустым
+        /// <summary>
+        /// Его описание - может быть пустым
+        /// </summary>
         public string? Description { get; set; } = null;
 
-        // Ссылка на сам продукт
+        /// <summary>
+        /// Ссылка на сам продукт
+        /// </summary>
         public string? Url { get; set; } = null!;
 
-        // Ссылка на изображение продукта
+        /// <summary>
+        /// Ссылка на изображение продукта
+        /// </summary>
         public string? Image_Url { get; set; } = null!;
 
-        // Цена продукта
+        /// <summary>
+        /// Цена продукта
+        /// </summary>
         public long? Sale_Price { get; set; } = null!;
 
+        /// <summary>
+        /// Категория продукта
+        /// </summary>
         public string? Type { get; set; }
 
         static public Converter<ProductInfoModel, ProductInfo> ToProductInfo { get; private set; } =

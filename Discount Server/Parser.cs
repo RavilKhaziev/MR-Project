@@ -28,7 +28,7 @@ namespace Discount_Server
         /// Функция запрашивает у парсера, все доступные категории товаров для парсера.
         /// </summary>
         /// <returns>Лист названий категорий.</returns>
-        public List<string> GetProductsCategory()
+        static public List<string> GetProductsCategory()
         {
             throw new NotImplementedException();
         }
@@ -510,5 +510,10 @@ namespace Discount_Server
             throw new NotImplementedException();
         }
 
+       static public List<string> GetProductsCategory()
+        {
+            // Заглушка
+            return new() {"bread","meat", "fruits and vegetables"};
+        }
     }
 }
