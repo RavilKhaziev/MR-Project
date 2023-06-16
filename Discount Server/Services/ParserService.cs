@@ -72,8 +72,6 @@ namespace Discount_Server.Services
                     item.Products = list;
                     await db.SaveChangesAsync();
                 }
-
-                // await scopedProcessingService.Shops.AddRangeAsync(list.ConvertAll<ShopInfo>(ShopInfoModel.ToShopInfo));
             }
 
 
