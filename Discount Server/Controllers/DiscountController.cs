@@ -37,41 +37,54 @@ namespace Discount_Server.Controllers
             }
             return list.ConvertAll(ShopInfo.ToShopInfoModel);
         }
-
-        /// <summary>
-        /// Запрос на получение всех доступных продуктов.
+        /// <summary> 
+        /// Запрос на получение всех доступных категорий товаров
         /// </summary>
-        /// <returns> Список всех продуктов</returns>
-        [Route("Products")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        /// <returns> Список всех доступных категорий товаров</returns>
         [HttpGet]
-        public async Task<List<ProductInfoModel>> GetProducts()
+        [Route("Products/Types")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public List<string> GetProductsTypes()
         {
-            return  (await _db.ProductInfo.ToListAsync()).ConvertAll(ProductInfo.ToProductInfoModel);
+            return Parser.GetProductsCategory();
         }
 
-        /// <summary>
+        /// <summary> 
         /// Запрос на получение продуктов из определённого магазина
         /// </summary>
         /// <param name="ShopName"> Указывает на необходимый магазин</param>
-        /// <returns> Список всех продуктов из указанного магазина</returns>
+        /// <param name="Category"> Указывает на необходимую категорию продукта</param>
+        /// <returns> Список всех продуктов из указанного магазина и категории</returns>
         [HttpGet]
-        [Route("Products/{ShopName}")]
+        [Route("Products")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<List<ProductInfoModel>> GetProducts(string ShopName)
+        public async Task<List<ProductInfoModel>> GetProducts(string? ShopName = null, string? Category = null)
         {
-            var productList = _db.ShopInfo.Include(p => p.Products).AsNoTracking()
-                .Where((shop) => shop.Shop_Name == ShopName).FirstOrDefault();
-            if (productList == null)
+            ShopInfo? shop = null;
+            if (ShopName != null)
             {
-                Response.StatusCode = StatusCodes.Status400BadRequest;
-                return new List<ProductInfoModel>();
+                shop = _db.ShopInfo.Include(p => p.Products).AsNoTracking()
+                    .Where((shop) => shop.Shop_Name == ShopName).FirstOrDefault();
+            }
+
+            var productList = new List<ProductInfoModel>();
+
+            if (shop == null)
+            {
+                productList = _db.ProductInfo.AsNoTracking().ToList().ConvertAll(ProductInfo.ToProductInfoModel);
             }
             else
             {
-                return productList.Products.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
+                productList = shop.Products.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
             }
+
+            if (Category != null)
+            {
+                productList = productList.Where((p) => p.Type == Category).ToList();
+            }
+           
+            return productList;
         }
     }
 }

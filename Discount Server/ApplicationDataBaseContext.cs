@@ -10,6 +10,7 @@ namespace Discount_Server
     {
         public DbSet<ShopInfo> ShopInfo { get; set; } = null!;
         public DbSet<ProductInfo> ProductInfo { get; set; } = null!;
+
         public ApplicationDataBaseContext(DbContextOptions<ApplicationDataBaseContext> options)
             : base(options)
         {
