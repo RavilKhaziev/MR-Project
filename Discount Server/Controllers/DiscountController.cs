@@ -20,6 +20,10 @@ namespace Discount_Server.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Запрос на получение всех доступных магазинов
+        /// </summary>
+        /// <returns> Список всех доступных магазинов</returns>
         [HttpGet]
         [Route("Shops")]
         [Produces("application/json")]
@@ -34,16 +38,27 @@ namespace Discount_Server.Controllers
             return list.ConvertAll(ShopInfo.ToShopInfoModel);
         }
 
-        [HttpGet]
+        /// <summary>
+        /// Запрос на получение всех доступных продуктов.
+        /// </summary>
+        /// <returns> Список всех продуктов</returns>
         [Route("Products")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [HttpGet]
         public async Task<List<ProductInfoModel>> GetProducts()
         {
             return  (await _db.ProductInfo.ToListAsync()).ConvertAll(ProductInfo.ToProductInfoModel);
         }
+
+        /// <summary>
+        /// Запрос на получение продуктов из определённого магазина
+        /// </summary>
+        /// <param name="ShopName"> Указывает на необходимый магазин</param>
+        /// <returns> Список всех продуктов из указанного магазина</returns>
         [HttpGet]
         [Route("Products/{ShopName}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<List<ProductInfoModel>> GetProducts(string ShopName)
         {
             var productList = _db.ShopInfo.Include(p => p.Products).AsNoTracking()
@@ -57,8 +72,6 @@ namespace Discount_Server.Controllers
             {
                 return productList.Products.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
             }
-            
-               
         }
     }
 }

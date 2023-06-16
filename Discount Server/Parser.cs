@@ -299,7 +299,11 @@ namespace Discount_Server
                 int index = 0;
                 int searchStartName, searchEndName, searchStartNewPrice, searchEndNewPrice, searchStartOldPrice, searchEndOldPrice;
                 string nameProduct, NewPriceProduct, OldPriceProduct;
-                while (response.IndexOf("\"product-item-title\" title=\"", index) != -1)
+                
+                // to do 
+                // Если ответа нет будет вызывать ошибку 
+                // Необходимо отловить ошибку или предложить другое решение 
+                while (response.IndexOf("\"product-item-title\" title=\"", index) != -1) // To do
                 {
                     searchStartName = response.IndexOf("\"product-item-title\" title=\"", index) + 28;
                     searchEndName = response.IndexOf("\" class=\"text\"", searchStartName);
