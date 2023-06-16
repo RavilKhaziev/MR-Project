@@ -242,8 +242,8 @@ namespace Discount_Server.Services
 
             Dictionary<string, int> types_magnit = new Dictionary<string, int>()
             {
-                {"khleb_vypechka_sneki", 0 },
                 {"myaso_ptitsa_kolbasy", 1 },
+                {"khleb_vypechka_sneki", 0 },   
                 {"ovoshchi_frukty", 2 },
 
             };
@@ -256,23 +256,37 @@ namespace Discount_Server.Services
             {
                 var request = new GetRequest($"https://dostavka.magnit.ru/express/catalog/{element.Key}?hasDiscount=true&page=1");
                 request.Run();
-
-                if (request.Response == null)
-                {
-                    throw new ParserException("Response is null :(");
-                }
-
+                List<int> list_code = new List<int>();
                 string response = request.Response;
 
                 int index = 0;
                 int searchStartName, searchEndName, searchStartNewPrice, searchEndNewPrice, searchStartOldPrice, searchEndOldPrice;
-                string nameProduct, NewPriceProduct, OldPriceProduct;
+                int searchStartProductCard, searchEndProductCard;
+                string nameProduct, NewPriceProduct, OldPriceProduct, product_card;
+                List<string> names = new();
+                List<long> prices = new();
+                List<string> types_prod = new();
+                List<string> descs = new();
+                List<string> img_url = new();
+                List<string> url_products = new();
+
                 while (response.IndexOf("\"product-item-title\" title=\"", index) != -1)
                 {
+                    searchStartProductCard = response.IndexOf("id=\"product-card-", index) + 17;
+                    searchEndProductCard = response.IndexOf("data", searchStartProductCard) - 2;
+
+                    product_card = response.Substring(searchStartProductCard, searchEndProductCard - searchStartProductCard);
+
+                    list_code.Add(Int32.Parse(product_card));
+
+                    index = searchEndProductCard;
+
                     searchStartName = response.IndexOf("\"product-item-title\" title=\"", index) + 28;
                     searchEndName = response.IndexOf("\" class=\"text\"", searchStartName);
 
                     nameProduct = response.Substring(searchStartName, searchEndName - searchStartName);
+
+                    names.Add(nameProduct);
 
                     index = searchEndName;
 
@@ -280,6 +294,8 @@ namespace Discount_Server.Services
                     searchEndNewPrice = response.IndexOf("</span>", searchStartNewPrice);
 
                     NewPriceProduct = response.Substring(searchStartNewPrice, searchEndNewPrice - searchStartNewPrice);
+
+                    prices.Add(long.Parse(NewPriceProduct));
 
                     index = searchEndNewPrice;
 
@@ -290,13 +306,77 @@ namespace Discount_Server.Services
 
                     index = searchEndOldPrice;
 
+                    types_prod.Add(types[element.Value]);
+
                     Console.WriteLine("\n////////////\n");
                     Console.WriteLine($"Название: {nameProduct}");
                     Console.WriteLine($"Старая цена: {OldPriceProduct} Р.");
                     Console.WriteLine($"Новая цена: {NewPriceProduct} Р.");
 
-                    products.Add(new ProductInfoModel { Name = nameProduct, Sale_Price = long.Parse(NewPriceProduct), Description = " ", Image_Url = " ", Url = " ", Type = types[element.Value] });
+                    //products.Add(new ProductInfoModel { Name = nameProduct, Sale_Price = long.Parse(NewPriceProduct), Description = " ", Image_Url = " ", Url = " ", Type = types[element.Value] });
 
+                }
+
+                int searchId, searchStartCode, searchEndCode;
+                string code;
+                List<string> url_card = new List<string>();
+                foreach (var item in list_code)
+                {
+                    searchId = response.IndexOf($"id:{item}", index);
+
+                    searchStartCode = response.IndexOf($"code:\"", searchId) + 6;
+                    searchEndCode = response.IndexOf($",article", searchId) - 1;
+
+                    code =  response.Substring(searchStartCode, searchEndCode - searchStartCode);
+                    url_card.Add(code);
+                }
+                index = 0;
+                string desc, url_image, url_product;
+                int searchEndJpeg, searchStartJpeg;
+                int searchStartdesc, searchEnddesc;
+                foreach (var item in url_card)
+                {
+                    searchEndJpeg = 0;
+                    searchStartJpeg = 0;
+                    index = 0;
+                    url_product = $"https://dostavka.magnit.ru/express/product/{item}";
+                    url_products.Add(url_product);
+
+                    request = new GetRequest(url_product);
+                    request.Run();
+                    response = request.Response;
+
+                    searchStartdesc = response.IndexOf("product-detail-text\">", index) + 20;
+                    searchEnddesc = response.IndexOf("</div>", searchStartdesc) - 1;
+
+                    desc = response.Substring(searchStartdesc, searchEnddesc - searchStartdesc);
+
+                    descs.Add(desc);
+
+                    while ((searchEndJpeg - searchStartJpeg) < 30)
+                    {
+                        searchEndJpeg = response.IndexOf(".jpeg", index) + 4;
+                        if ((searchEndJpeg - 4) == -1) searchEndJpeg = response.IndexOf(".png", index) + 3;
+                        searchStartJpeg = searchEndJpeg;
+
+                        while (response[searchStartJpeg] != '\"')
+                        {
+                            searchStartJpeg--;
+                        }
+                        searchStartJpeg++;
+                        index = searchEndJpeg;
+                    }
+                    
+
+                    url_image = "https://img-dostavka.magnit.ru/resize/420x420/" + response.Substring(searchStartJpeg, searchEndJpeg - searchStartJpeg) + "g";
+                    url_image = url_image.Replace("\\u002F", "/");
+
+                    img_url.Add(url_image);
+                }
+
+                for (int i = 0; i < names.Count; i++)
+                {
+                    products.Add(new ProductInfoModel { Name = names[i], Description = descs[i], Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
                 }
             }
             
@@ -325,19 +405,14 @@ namespace Discount_Server.Services
 
                 request.Run();
 
-                if(request.Response == null)
-                {
-                    throw new ParserException("Response is null :(");
-                }
                 string response = request.Response;
-
-                
                 //JsonSerializer json = JsonSerializer.Deserialize(response); 
                 var mass = JsonObject.Parse(response);
                 //Console.WriteLine(mass["results"].AsArray());
                 //Console.WriteLine(mass["results"].AsArray()[0]["name"]);
                 string name;
                 long price;
+                string img_url;
                 for (int i = 0; i < mass["results"].AsArray().Count; i++)
                 {
                     Console.WriteLine("\n//////\n");
@@ -345,9 +420,10 @@ namespace Discount_Server.Services
                     Console.WriteLine($"Старая цена: {mass["results"][i]["current_prices"]["price_reg__min"]}");
                     Console.WriteLine($"Новая цена: {mass["results"][i]["current_prices"]["price_promo__min"]}");
                     name = mass["results"][i]["name"].ToString();
-                    var tmp = mass["results"][i]["current_prices"]["price_promo__min"];;
+                    var tmp = mass["results"][i]["current_prices"]["price_promo__min"];
+                    img_url = mass["results"][i]["img_link"].ToString();
                     price = long.Parse(tmp.ToString().Substring(0, tmp.ToString().IndexOf('.')));
-                    products.Add(new ProductInfoModel { Name = name, Sale_Price = price, Description = " ", Image_Url = " ", Url = " ", Type = types[element.Value] });
+                    products.Add(new ProductInfoModel { Name = name, Sale_Price = price, Description = " ", Image_Url = img_url, Url = " ", Type = types[element.Value] });
                 }
             }
             
