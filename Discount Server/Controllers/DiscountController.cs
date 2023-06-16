@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Discount_Server.ViewModels;
 using Discount_Server.Models;
+using SQLitePCL;
+using Microsoft.EntityFrameworkCore;
 
 namespace Discount_Server.Controllers
 {
@@ -25,37 +27,11 @@ namespace Discount_Server.Controllers
         public async Task<List<ShopInfoModel>> GetShops()
         {
             List<ShopInfo> list = new();
-            await foreach (var item in _db.Shops.AsAsyncEnumerable())
+            await foreach (var item in _db.ShopInfo.AsAsyncEnumerable())
             {
                 list.Add(item);
             }
             return list.ConvertAll(ShopInfo.ToShopInfoModel);
-        }
-
-
-        /// <summary> 
-        /// Задаёт доступные магазины POST запросом 
-        /// </summary>
-
-        [HttpPost]
-        [Route("Shops")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status202Accepted)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async void PostShops(List<ShopInfoModel> newShops)
-        {
-
-            List<ShopInfo> list = newShops.ConvertAll(ShopInfoModel.ToShopInfo);
-            try
-            {
-                await _db.Shops.AddRangeAsync(list);
-                await _db.SaveChangesAsync();
-            }
-            catch (Exception)
-            {
-                Response.StatusCode = StatusCodes.Status400BadRequest;
-            }
-
         }
 
         [HttpGet]
@@ -63,21 +39,26 @@ namespace Discount_Server.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<List<ProductInfoModel>> GetProducts()
         {
-            return new List<ProductInfoModel>();
+            return  (await _db.ProductInfo.ToListAsync()).ConvertAll(ProductInfo.ToProductInfoModel);
         }
-
-        [HttpPost]
-        [Route("Products")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status202Accepted)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async void PostProducts()
+        [HttpGet]
+        [Route("Products/{ShopName}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<List<ProductInfoModel>> GetProducts(string ShopName)
         {
+            var productList = _db.ShopInfo.Include(p => p.Products).AsNoTracking()
+                .Where((shop) => shop.Shop_Name == ShopName).FirstOrDefault();
+            if (productList == null)
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return new List<ProductInfoModel>();
+            }
+            else
+            {
+                return productList.Products.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
+            }
             
+               
         }
-
-       
-
-
     }
 }

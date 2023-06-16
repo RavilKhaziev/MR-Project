@@ -13,14 +13,14 @@ namespace Discount_Server.ViewModels
         public string? Name { get; set; } = null!;
 
         // Ссылка на главную страницу магазина  
-        public string Url { get; set; } = null!;
+        public string? Url { get; set; } = null!;
 
         static public Converter<ShopInfoModel, ShopInfo> ToShopInfo =
            (model) => new ShopInfo()
            {
-               Name = model.Name,
+               Shop_Name = model.Name,
                Shop_Code = model.Shop_Code,
-               Url = model.Url,
+               Url = model.Url
            };
     }
 

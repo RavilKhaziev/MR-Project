@@ -26,12 +26,12 @@ namespace Discount_Server.ViewModels
         static public Converter<ProductInfoModel, ProductInfo> ToProductInfo { get; private set; } =
             (model) => new ProductInfo()
             {
-                Name = model.Name,
+                Product_Name = model.Name,
                 Description = model.Description,
                 Url = model.Url,
                 Image_Url = model.Image_Url,
                 Sale_Price = model.Sale_Price,
-                Type = model.Type,
+                Type = model.Type
             };
     }
 
