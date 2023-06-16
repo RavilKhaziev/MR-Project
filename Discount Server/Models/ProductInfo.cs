@@ -5,8 +5,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Discount_Server.Models
 {
-
-
     [Owned]
     public class ProductInfo
     {

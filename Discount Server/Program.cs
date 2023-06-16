@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
-using NgrokAspNetCore;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -12,8 +11,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Core.Features;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Discount_Server;
 using Discount_Server.Services;
-using Newtonsoft.Json;
 using Discount_Server.Models;
+using Microsoft.Extensions.Options;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,10 +24,23 @@ builder.Services.AddMvc();
 
 builder.Services.AddControllers();
 
-
 builder.Services.AddDbContext<ApplicationDataBaseContext>(options => options.UseSqlite(connection));
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen((p) => 
+{
+
+    p.SwaggerDoc("v1", new()
+    {
+        Version = "v1",
+        Title = "CyberUpgrade API - *Название продукта*",
+        Description = "API для скидок в различных магазинах",
+    });
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    p.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
+});
 
 builder.Services.AddHostedService<ParserService>();
 
@@ -36,11 +49,7 @@ builder.Services.AddHostedService<ParserService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
 
 app.UseSwaggerUI(options =>
 {
