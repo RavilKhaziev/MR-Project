@@ -378,7 +378,9 @@ namespace Discount_Server
 
                     searchStartCode = response.IndexOf($"code:\"", searchId) + 6;
                     searchEndCode = response.IndexOf($",article", searchId) - 1;
+                    //To Do 
                     if (searchEndCode - searchStartCode < 0) continue;
+                    // To Do
                     code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
                     url_card.Add(code);
                 }
@@ -419,14 +421,14 @@ namespace Discount_Server
                         index = searchEndJpeg;
                     }
 
-
+                    
                     url_image = "https://img-dostavka.magnit.ru/resize/420x420/" + response.Substring(searchStartJpeg, searchEndJpeg - searchStartJpeg) + "g";
                     url_image = url_image.Replace("\\u002F", "/");
 
                     img_url.Add(url_image);
                 }
 
-                for (int i = 0; i < names.Count; i++)
+                for (int i = 0; i < new List<int> { names.Count, descs.Count, img_url.Count, prices.Count, types_prod.Count, url_products.Count }.Min() ; i++)
                 {
                     products.Add(new ProductInfoModel { Name = names[i], Description = descs[i], Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
                 }
