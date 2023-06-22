@@ -103,6 +103,10 @@ namespace Discount_Server
     //    }
     //}
 
+    class ParserException : Exception
+    {
+        public ParserException(string message) : base(message) { }
+    }
 
     class Parser : IParser
     {
@@ -303,6 +307,9 @@ namespace Discount_Server
                 request.Run();
                 List<int> list_code = new List<int>();
                 string response = request.Response;
+                
+                if (response == null)
+                    throw new ParserException("При запросе не был получен ответ.");
 
                 int index = 0;
                 int searchStartName, searchEndName, searchStartNewPrice, searchEndNewPrice, searchStartOldPrice, searchEndOldPrice;
@@ -371,7 +378,7 @@ namespace Discount_Server
 
                     searchStartCode = response.IndexOf($"code:\"", searchId) + 6;
                     searchEndCode = response.IndexOf($",article", searchId) - 1;
-
+                    if (searchEndCode - searchStartCode < 0) continue;
                     code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
                     url_card.Add(code);
                 }
