@@ -2,7 +2,10 @@
 using Discount_Server.ViewModels;
 using Discount_Server.Models;
 using SQLitePCL;
+using Microsoft.AspNetCore.Razor;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Net.Http.Headers;
 
 namespace Discount_Server.Controllers
 {
@@ -13,11 +16,15 @@ namespace Discount_Server.Controllers
     {
         ApplicationDataBaseContext _db;
         ILogger<DiscountController> _logger;
+        const uint PAGE_SIZE = 20;
 
-        public DiscountController(ApplicationDataBaseContext AppContext, ILogger<DiscountController> logger)
+        IMemoryCache _memoryCache;
+
+        public DiscountController(ApplicationDataBaseContext AppContext, ILogger<DiscountController> logger, IMemoryCache memoryCache)
         {
             _db = AppContext;
             _logger = logger;
+            _memoryCache = memoryCache;
         }
 
         /// <summary>
@@ -48,18 +55,22 @@ namespace Discount_Server.Controllers
         {
             return Parser.GetProductsCategory();
         }
-
         /// <summary> 
-        /// Запрос на получение продуктов из определённого магазина
+        /// Запрос на получение продуктов из определённого магазина.
         /// </summary>
-        /// <param name="ShopName"> Указывает на необходимый магазин</param>
-        /// <param name="Category"> Указывает на необходимую категорию продукта</param>
-        /// <returns> Список всех продуктов из указанного магазина и категории</returns>
+        /// <param name="ShopName"> Указывает на необходимый магазин.</param>
+        /// <param name="Category"> Указывает на необходимую категорию продукта.</param>
+        /// <param name="Page"> 
+        ///     Указывает какую страницу необходимо получить.
+        ///     Нумерация страниц начинается с 0.
+        ///     Количество товаров на странице 20.
+        /// </param>
+        /// <returns> Список всех продуктов из указанного магазина и категории.</returns>
         [HttpGet]
         [Route("Products")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<List<ProductInfoModel>> GetProducts(string? ShopName = null, string? Category = null)
+        public ProductsPageViewModel GetProducts(string? ShopName = null, string? Category = null, uint Page = 0)
         {
             ShopInfo? shop = null;
             if (ShopName != null)
@@ -83,8 +94,17 @@ namespace Discount_Server.Controllers
             {
                 productList = productList.Where((p) => p.Type == Category).ToList();
             }
-           
-            return productList;
+
+            ProductsPageViewModel productPage = new ProductsPageViewModel();
+            if (productList.Count > (Page) * PAGE_SIZE)
+                productPage.Products = productList.GetRange((int)(PAGE_SIZE * (Page)),(int)( productList.Count - PAGE_SIZE * (Page)));
+            else
+                productPage.Products = new List<ProductInfoModel>();
+
+            productPage.PageInfo.TotalItems = productList.Count;
+            productPage.PageInfo.PageNumber = (int)Page;
+            productPage.PageInfo.PageSize = (int)PAGE_SIZE;
+            return productPage;
         }
     }
 }

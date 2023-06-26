@@ -31,9 +31,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen((p) => 
 {
 
-    p.SwaggerDoc("v1.3", new()
+    p.SwaggerDoc("v1.3.1", new()
     {
-        Version = "v1.3",
+        Version = "v1.3.1",
         Title = "CyberUpgrade API - *Название продукта*",
         Description = "API для скидок в различных магазинах",
     });
@@ -44,6 +44,8 @@ builder.Services.AddSwaggerGen((p) =>
 
 builder.Services.AddHostedService<ParserService>();
 
+builder.Services.AddMemoryCache();
+
 
 //builder.Services.AddHostedService<TimedHostedService>();
 
@@ -53,7 +55,7 @@ app.UseSwagger();
 
 app.UseSwaggerUI(options =>
 {
-    options.SwaggerEndpoint("/swagger/v1.3/swagger.json", "v1.3");
+    options.SwaggerEndpoint("/swagger/v1.3.1/swagger.json", "v1.3.1");
     options.RoutePrefix = string.Empty;
 });
 
