@@ -28,6 +28,8 @@ builder.Services.AddDbContext<ApplicationDataBaseContext>(options => options.Use
 
 builder.Services.AddEndpointsApiExplorer();
 
+
+
 builder.Services.AddSwaggerGen((p) => 
 {
 
@@ -46,12 +48,19 @@ builder.Services.AddHostedService<ParserService>();
 
 builder.Services.AddMemoryCache();
 
+builder.Services.AddResponseCompression();
+
+builder.Services.AddCors();
 
 //builder.Services.AddHostedService<TimedHostedService>();
 
 var app = builder.Build();
 
+app.UseResponseCompression();   
+
 app.UseSwagger();
+
+app.UseCors(builder => builder.AllowAnyOrigin());
 
 app.UseSwaggerUI(options =>
 {
