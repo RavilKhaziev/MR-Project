@@ -103,10 +103,6 @@ namespace Discount_Server
     //    }
     //}
 
-    class ParserException : Exception
-    {
-        public ParserException(string message) : base(message) { }
-    }
 
     class Parser : IParser
     {
@@ -120,7 +116,9 @@ namespace Discount_Server
         {
             {0, "bread"},
             {1, "meat" },
-            {2, "fruits and vegetables" }
+            {2, "fruits and vegetables" },
+            {3, "molochka" },
+            {4, "chay_kofe" }
         };
 
         public class GetRequest
@@ -198,7 +196,7 @@ namespace Discount_Server
             }
         }
 
-        public class PostRequest 
+        public class PostRequest
         {
             HttpWebRequest _request;
             string _address;
@@ -294,6 +292,8 @@ namespace Discount_Server
                 {"myaso_ptitsa_kolbasy", 1 },
                 {"khleb_vypechka_sneki", 0 },
                 {"ovoshchi_frukty", 2 },
+                {"moloko_syr_yaytsa", 3 },
+                {"chay_kofe_kakao", 4 }
 
             };
 
@@ -307,9 +307,6 @@ namespace Discount_Server
                 request.Run();
                 List<int> list_code = new List<int>();
                 string response = request.Response;
-                
-                if (response == null)
-                    throw new ParserException("При запросе не был получен ответ.");
 
                 int index = 0;
                 int searchStartName, searchEndName, searchStartNewPrice, searchEndNewPrice, searchStartOldPrice, searchEndOldPrice;
@@ -378,9 +375,7 @@ namespace Discount_Server
 
                     searchStartCode = response.IndexOf($"code:\"", searchId) + 6;
                     searchEndCode = response.IndexOf($",article", searchId) - 1;
-                    //To Do 
-                    if (searchEndCode - searchStartCode < 0) continue;
-                    // To Do
+
                     code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
                     url_card.Add(code);
                 }
@@ -421,16 +416,21 @@ namespace Discount_Server
                         index = searchEndJpeg;
                     }
 
-                    
+
                     url_image = "https://img-dostavka.magnit.ru/resize/420x420/" + response.Substring(searchStartJpeg, searchEndJpeg - searchStartJpeg) + "g";
                     url_image = url_image.Replace("\\u002F", "/");
 
                     img_url.Add(url_image);
                 }
 
-                for (int i = 0; i < new List<int> { names.Count, descs.Count, img_url.Count, prices.Count, types_prod.Count, url_products.Count }.Min() ; i++)
+                for (int i = 0; i < names.Count; i++)
                 {
-                    products.Add(new ProductInfoModel { Name = names[i], Description = descs[i], Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
+                    string desc_res = descs[i];
+                    if (descs[i].Contains("<link") || descs[i].Contains("href"))
+                    {
+                        desc_res = "";
+                    }
+                    products.Add(new ProductInfoModel { Name = names[i], Description = desc_res, Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
                 }
             }
 
@@ -519,10 +519,15 @@ namespace Discount_Server
             throw new NotImplementedException();
         }
 
-       static public List<string> GetProductsCategory()
+        static public List<string> GetProductsCategory()
         {
-            // Заглушка
-            return new() {"bread","meat", "fruits and vegetables"};
+
+            List<string> res = new();
+            foreach (KeyValuePair<int, string> item in types)
+            {
+                res.Add(item.Value);
+            }
+            return res;
         }
     }
 }
