@@ -426,10 +426,12 @@ namespace Discount_Server
                 for (int i = 0; i < names.Count; i++)
                 {
                     string desc_res = descs[i];
+                    desc_res = desc_res.Replace("<br />", "").Replace(">", "").Replace("\n", "");
                     if (descs[i].Contains("<link") || descs[i].Contains("href"))
                     {
                         desc_res = "";
                     }
+                    
                     products.Add(new ProductInfoModel { Name = names[i], Description = desc_res, Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
                 }
             }
