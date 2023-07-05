@@ -68,11 +68,11 @@ namespace Discount_Server.Services
                     {
                        list = new Parser().GetProductList(ShopInfo.ToShopInfoModel(item))?.ConvertAll(ProductInfoModel.ToProductInfo);
                     }
-                    catch (ParserException err)
-                    {
-                        _logger.LogError($"{DateTime.Now} Что-то пошло не так при парсе: \n{err.Message}");
-                        return;
-                    }
+                    //catch ( err)
+                    //{
+                    //    _logger.LogError($"{DateTime.Now} Что-то пошло не так при парсе: \n{err.Message}");
+                    //    return;
+                    //}
                     catch(Exception err)
                     {
                         _logger.LogError($"{DateTime.Now} Ошибка в работе парсера необходимо исправить!: \n{err.Message}");

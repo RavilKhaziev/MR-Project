@@ -87,19 +87,21 @@ namespace Discount_Server.Controllers
             }
             else
             {
-                productList = shop.Products.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
+                productList = shop.Products?.ToList().ConvertAll(ProductInfo.ToProductInfoModel);
             }
 
             if (Category != null)
             {
-                productList = productList.Where((p) => p.Type == Category).ToList();
+                productList = productList?.Where((p) => p.Type == Category).ToList();
             }
-
             ProductsPageViewModel productPage = new ProductsPageViewModel();
-            if (productList.Count > (Page) * PAGE_SIZE)
-                productPage.Products = productList.GetRange((int)(PAGE_SIZE * (Page)),(int)( productList.Count - PAGE_SIZE * (Page)));
-            else
+
+            if (productList.Count - Page * PAGE_SIZE < 0)
                 productPage.Products = new List<ProductInfoModel>();
+            else if ((productList.Count - (Page) * PAGE_SIZE) / PAGE_SIZE > 0)
+                productPage.Products = productList.GetRange((int)(PAGE_SIZE * Page), (int)(PAGE_SIZE));
+            else if ((productList.Count - (Page) * PAGE_SIZE) / PAGE_SIZE == 0)
+                productPage.Products = productList.GetRange((int)(PAGE_SIZE * Page), (int)(productList.Count % PAGE_SIZE));
 
             productPage.PageInfo.TotalItems = productList.Count;
             productPage.PageInfo.PageNumber = (int)Page;

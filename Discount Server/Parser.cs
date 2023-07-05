@@ -423,7 +423,8 @@ namespace Discount_Server
                     img_url.Add(url_image);
                 }
 
-                for (int i = 0; i < names.Count; i++)
+                // TO DO 
+                for (int i = 0; i < new List<int> { names.Count, descs.Count, img_url.Count, prices.Count, types_prod.Count, url_products.Count }.Min(); i++)
                 {
                     string desc_res = descs[i];
                     desc_res = desc_res.Replace("<br />", "").Replace(">", "").Replace("\n", "");

@@ -18,17 +18,14 @@ using System.Reflection;
 var builder = WebApplication.CreateBuilder(args);
 
 
-string? connection = builder.Configuration.GetConnectionString("DefaultConnection");
-
+string? SQLLiteConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddMvc();
 
 builder.Services.AddControllers();
 
-builder.Services.AddDbContext<ApplicationDataBaseContext>(options => options.UseSqlite(connection));
+builder.Services.AddDbContext<ApplicationDataBaseContext>(options => options.UseSqlite(SQLLiteConnection));
 
 builder.Services.AddEndpointsApiExplorer();
-
-
 
 builder.Services.AddSwaggerGen((p) => 
 {
