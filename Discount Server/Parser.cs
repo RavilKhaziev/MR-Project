@@ -333,7 +333,7 @@ namespace Discount_Server
                     searchStartName = response.IndexOf("\"product-item-title\" title=\"", index) + 28;
                     searchEndName = response.IndexOf("\" class=\"text\"", searchStartName);
 
-                    nameProduct = response.Substring(searchStartName, searchEndName - searchStartName);
+					nameProduct = response.Substring(searchStartName, searchEndName - searchStartName);
 
                     names.Add(nameProduct);
 
@@ -376,7 +376,10 @@ namespace Discount_Server
                     searchStartCode = response.IndexOf($"code:\"", searchId) + 6;
                     searchEndCode = response.IndexOf($",article", searchId) - 1;
 
-                    code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
+					// to do 
+					if (searchEndCode - searchStartCode < 0) continue;
+
+					code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
                     url_card.Add(code);
                 }
                 index = 0;
