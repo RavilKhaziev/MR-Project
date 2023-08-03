@@ -487,7 +487,10 @@ namespace Discount_Server
                 }
             }
 
+
         }
+
+
 
         //return shops
         public List<ShopInfoModel> GetShopList()
