@@ -1,0 +1,26 @@
+version: '3.4'
+
+
+services:
+  webserver:
+    container_name: webserver
+    image: ${DOCKER_REGISTRY-}webserver
+    build:
+      context: .
+      dockerfile: WebServer/Dockerfile
+    networks: 
+     - my-net
+  sql-server-db:
+   container_name: user-db
+   image: mcr.microsoft.com/mssql/server:2022-latest
+   networks: 
+     - my-net
+   ports:
+   - "1401:1433"
+   environment:
+    ACCEPT_EULA: "Y"
+
+    MSSQL_SA_PASSWORD: "avRK-LnF1n" 
+networks:
+  my-net:
+    driver: bridge
