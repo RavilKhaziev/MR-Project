@@ -12,15 +12,15 @@ services:
      - my-net
   sql-server-db:
    container_name: user-db
-   image: mcr.microsoft.com/mssql/server:2022-latest
+   image: postgres
    networks: 
      - my-net
    ports:
-   - "1401:1433"
+   - "5432:5432"
    environment:
-    ACCEPT_EULA: "Y"
-
-    MSSQL_SA_PASSWORD: "avRK-LnF1n" 
+    POSTGRES_DB: "usersdb"
+    POSTGRES_USER: "SA"
+    POSTGRES_PASSWORD: "avRK-LnF1n" 
 networks:
   my-net:
     driver: bridge

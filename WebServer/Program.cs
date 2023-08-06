@@ -3,20 +3,38 @@ using Microsoft.EntityFrameworkCore;
 using WebServer.Data;
 using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
+using IdentityServer4.Services;
+using IdentityServer4.Models;
+using IdentityServer4;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-	options.UseSqlServer(connectionString));
+	options.UseNpgsql(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
 	.AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 
+
+
+//builder.Services
+//		.AddIdentityServer(x => x.IssuerUri = "null")
+//		.AddSigningCredential(Certificate.Get())
+//		.AddAspNetIdentity<ApplicationUser>()
+//		.AddConfigurationStore(builder =>
+//			builder.UseSqlServer(connectionString, options =>
+//				options.MigrationsAssembly(migrationsAssembly)))
+//		.AddOperationalStore(builder =>
+//			builder.UseSqlServer(connectionString, options =>
+//				options.MigrationsAssembly(migrationsAssembly)))
+//		.Services.AddTransient<IProfileService, ProfileService>();
 var app = builder.Build();
+
+//app.UseIdentityServer();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
