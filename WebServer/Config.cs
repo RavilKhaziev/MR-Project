@@ -3,7 +3,7 @@ using IdentityServer4;
 
 namespace WebServer
 {
-	public class Config
+	public static class Config
 	{
 		public static IEnumerable<IdentityResource> IdentityResources =>
 		new List<IdentityResource>
@@ -17,6 +17,7 @@ namespace WebServer
 			{
 				new ApiScope("api1", "My API")
 			};
+
 		public static IEnumerable<Client> Clients =>
 			new List<Client>
 			{

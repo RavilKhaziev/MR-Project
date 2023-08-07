@@ -10,6 +10,9 @@ services:
       dockerfile: WebServer/Dockerfile
     networks: 
      - my-net
+    volumes:
+    - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
   sql-server-db:
    container_name: user-db
    image: postgres
