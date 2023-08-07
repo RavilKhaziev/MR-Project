@@ -16,6 +16,9 @@ RUN dotnet build "WebServer.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "WebServer.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
+WORKDIR "/src/WebServer"
+CMD dotnet dev-certs https -ep ./certificate.pfx -p avRK-LnF1n --trust
+
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
