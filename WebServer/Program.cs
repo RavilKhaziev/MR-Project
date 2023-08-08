@@ -116,9 +116,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 NpgsqlDataSourceBuilder npgBuilder = new NpgsqlDataSourceBuilder(connectionString);
 await using var dataSource = npgBuilder.Build();
 
+builder.Services.AddCors();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
 	options.UseNpgsql(dataSource)
-	 .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning))
+	 .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning));
+}
+
 	);
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();

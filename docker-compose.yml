@@ -1,6 +1,4 @@
-version: '3.4'
-
-
+version: '3.9'
 services:
   webserver:
     container_name: webserver
@@ -9,7 +7,7 @@ services:
       context: .
       dockerfile: WebServer/Dockerfile
     networks:
-    - my-net
+     - my-net
     volumes:
      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
@@ -20,14 +18,20 @@ services:
    networks:
     - my-net
    ports:
-   - 5531:5432
+   - "5532:5432"
    environment:
     POSTGRES_DB: "usersdb"
     POSTGRES_USER: "SA"
     POSTGRES_PASSWORD: "avRK-LnF1n"
-    POSTGRES_HOST_AUTH_METHOD: trust
+    POSTGRES_HOST_AUTH_METHOD: "trust"
+    DB_DEV_HOST: localhost
+    DB_HOST: db
     
     
 networks:
   my-net:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.0.0/28
