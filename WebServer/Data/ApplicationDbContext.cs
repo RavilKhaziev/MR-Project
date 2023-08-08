@@ -19,7 +19,7 @@ namespace WebServer.Data
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
 			base.OnModelCreating(builder);
-			Database.MigrateAsync();
+			Database.Migrate();
 		}
 
 	}
