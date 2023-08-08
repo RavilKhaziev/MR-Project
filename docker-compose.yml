@@ -8,22 +8,26 @@ services:
     build:
       context: .
       dockerfile: WebServer/Dockerfile
-    networks: 
-     - my-net
+    networks:
+    - my-net
     volumes:
      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-  sql-server-db:
+  postgres-server-db:
    container_name: user-db
+   restart: always
    image: postgres
-   networks: 
-     - my-net
+   networks:
+    - my-net
    ports:
-   - "5433:5432"
+   - 5531:5432
    environment:
     POSTGRES_DB: "usersdb"
     POSTGRES_USER: "SA"
-    POSTGRES_PASSWORD: "avRK-LnF1n" 
+    POSTGRES_PASSWORD: "avRK-LnF1n"
+    POSTGRES_HOST_AUTH_METHOD: trust
+    
+    
 networks:
   my-net:
     driver: bridge

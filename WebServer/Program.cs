@@ -12,6 +12,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
 using System.Security;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
+using System.Text;
+using Npgsql;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 //{
 //	// Describe certificate
 //	string subject = "CN=localhost";
@@ -105,12 +108,19 @@ using Microsoft.AspNetCore.Server.Kestrel.Https;
 var builder = WebApplication.CreateBuilder(args);
 
 
-
+builder.Services.AddDataProtection();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+NpgsqlDataSourceBuilder npgBuilder = new NpgsqlDataSourceBuilder(connectionString);
+await using var dataSource = npgBuilder.Build();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-	options.UseNpgsql(connectionString));
+	options.UseNpgsql(dataSource)
+	 .ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.ManyServiceProvidersCreatedWarning))
+	);
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddRazorPages();
