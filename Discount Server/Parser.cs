@@ -116,7 +116,9 @@ namespace Discount_Server
         {
             {0, "bread"},
             {1, "meat" },
-            {2, "fruits and vegetables" }
+            {2, "fruits and vegetables" },
+            {3, "molochka" },
+            {4, "chay_kofe" }
         };
 
         public class GetRequest
@@ -194,7 +196,7 @@ namespace Discount_Server
             }
         }
 
-        public class PostRequest 
+        public class PostRequest
         {
             HttpWebRequest _request;
             string _address;
@@ -290,6 +292,8 @@ namespace Discount_Server
                 {"myaso_ptitsa_kolbasy", 1 },
                 {"khleb_vypechka_sneki", 0 },
                 {"ovoshchi_frukty", 2 },
+                {"moloko_syr_yaytsa", 3 },
+                {"chay_kofe_kakao", 4 }
 
             };
 
@@ -329,7 +333,7 @@ namespace Discount_Server
                     searchStartName = response.IndexOf("\"product-item-title\" title=\"", index) + 28;
                     searchEndName = response.IndexOf("\" class=\"text\"", searchStartName);
 
-                    nameProduct = response.Substring(searchStartName, searchEndName - searchStartName);
+					nameProduct = response.Substring(searchStartName, searchEndName - searchStartName);
 
                     names.Add(nameProduct);
 
@@ -372,7 +376,10 @@ namespace Discount_Server
                     searchStartCode = response.IndexOf($"code:\"", searchId) + 6;
                     searchEndCode = response.IndexOf($",article", searchId) - 1;
 
-                    code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
+					// to do 
+					if (searchEndCode - searchStartCode < 0) continue;
+
+					code = response.Substring(searchStartCode, searchEndCode - searchStartCode);
                     url_card.Add(code);
                 }
                 index = 0;
@@ -419,9 +426,17 @@ namespace Discount_Server
                     img_url.Add(url_image);
                 }
 
-                for (int i = 0; i < names.Count; i++)
+                // TO DO 
+                for (int i = 0; i < new List<int> { names.Count, descs.Count, img_url.Count, prices.Count, types_prod.Count, url_products.Count }.Min(); i++)
                 {
-                    products.Add(new ProductInfoModel { Name = names[i], Description = descs[i], Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
+                    string desc_res = descs[i];
+                    desc_res = desc_res.Replace("<br />", "").Replace(">", "").Replace("\n", "");
+                    if (descs[i].Contains("<link") || descs[i].Contains("href"))
+                    {
+                        desc_res = "";
+                    }
+                    
+                    products.Add(new ProductInfoModel { Name = names[i], Description = desc_res, Image_Url = img_url[i], Sale_Price = prices[i], Type = types_prod[i], Url = url_products[i] });
                 }
             }
 
@@ -472,7 +487,10 @@ namespace Discount_Server
                 }
             }
 
+
         }
+
+
 
         //return shops
         public List<ShopInfoModel> GetShopList()
@@ -510,10 +528,15 @@ namespace Discount_Server
             throw new NotImplementedException();
         }
 
-       static public List<string> GetProductsCategory()
+        static public List<string> GetProductsCategory()
         {
-            // Заглушка
-            return new() {"bread","meat", "fruits and vegetables"};
+
+            List<string> res = new();
+            foreach (KeyValuePair<int, string> item in types)
+            {
+                res.Add(item.Value);
+            }
+            return res;
         }
     }
 }
