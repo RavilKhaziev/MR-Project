@@ -3,6 +3,7 @@ using FREEFOODSERVER.Models.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Npgsql;
 
 namespace FREEFOODSERVER
 {
@@ -12,10 +13,15 @@ namespace FREEFOODSERVER
         {
             var builder = WebApplication.CreateBuilder(args);
             
+
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(connectionString));
+            NpgsqlDataSourceBuilder npgBuilder = new NpgsqlDataSourceBuilder(connectionString);
+            using var dataSource = npgBuilder.Build();
+            builder.Services.AddDbContext<ApplicationDbContext>(options => 
+            {
+                    options.UseNpgsql(dataSource, builder => builder.EnableRetryOnFailure());
+            });
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
@@ -47,24 +53,25 @@ namespace FREEFOODSERVER
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.UseMigrationsEndPoint();
-                app.UseSwagger(options =>
-                {
-                    options.RouteTemplate = "api/IdentityServer/{documentName}/swagger.json";
-                });
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/api/IdentityServer/v1/swagger.json", "v1");
-                    options.RoutePrefix = string.Empty;
-                });
+               
             }
             else
             {
+                
                 //app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 //  app.UseHsts();
             }
-
+            app.UseMigrationsEndPoint();
+            app.UseSwagger(options =>
+            {
+                options.RouteTemplate = "api/IdentityServer/{documentName}/swagger.json";
+            });
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/api/IdentityServer/v1/swagger.json", "v1");
+                options.RoutePrefix = string.Empty;
+            });
             //app.UseHttpsRedirection();
             app.UseStaticFiles();
 

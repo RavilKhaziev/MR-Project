@@ -13,6 +13,8 @@ services:
      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
     ports:
      - "61742:80"
+    depends_on:
+     - postgres-server-db
   postgres-server-db:
    container_name: user-db
    restart: always
