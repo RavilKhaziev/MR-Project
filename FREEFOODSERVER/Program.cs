@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Npgsql;
+using System.Runtime.CompilerServices;
 
 namespace FREEFOODSERVER
 {
@@ -86,25 +87,32 @@ namespace FREEFOODSERVER
 
             using (var scope = app.Services.CreateScope())
             {
-
                 var services = scope.ServiceProvider;
+                var logger = services.GetRequiredService<ILogger<Program>>();
+                var db = services.GetRequiredService<ApplicationDbContext>();
+                var userManager = services.GetRequiredService<UserManager<User>>();
+                var rolesManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                int count = 0;
+                while (!db.Database.CanConnect())
+                { 
+                    logger.LogError("Can't connect to DB. Wait 5 sec.");
+                    Thread.Sleep(5000);
+                    if (count > 100)
+                        return;
+                }
                 try
                 {
-                    var db = services.GetRequiredService<ApplicationDbContext>();
-                    var userManager = services.GetRequiredService<UserManager<User>>();
-                    var rolesManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-                    db.Database.Migrate();
-                    Console.WriteLine(rolesManager.Roles.ToList().Count);
-                    var result = RoleInitializer.InitializeAsync(userManager, rolesManager);
-                    result.Wait();
-                    db.SaveChanges();
-                    Console.WriteLine(rolesManager.Roles.ToList().Count);
+                    db.Database.Migrate(); 
                 }
                 catch (Exception ex)
                 {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
                     logger.LogError(ex, "An error occurred while seeding the database.");
                 }
+                Console.WriteLine(rolesManager.Roles.ToList().Count);
+                var result = RoleInitializer.InitializeAsync(userManager, rolesManager);
+                result.Wait();
+                db.SaveChanges();
+                Console.WriteLine(rolesManager.Roles.ToList().Count);
             }
 
             app.Run();
