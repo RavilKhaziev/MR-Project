@@ -1,0 +1,59 @@
+﻿@using FREEFOODSERVER.Models.Users;
+@using Microsoft.AspNetCore.Identity
+@using FREEFOODSERVER.Models.ViewModel.Admin
+
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@model List<UserViewModel>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+
+<div class="usersRoles-center">
+
+    <h1> Все доступные роли </h1>
+    <table>
+        @{
+            <tr><td>Роли</td></tr>
+            foreach (var role in RoleManager.Roles)
+            {
+                <tr>
+                    <td>@role.Name</td>
+                </tr>
+            }
+        }
+    </table>
+    <h1> Все </h1>
+    <table border="1" align="center" cellspacing="20" cellpadding="50">
+        <tr><td>ID</td><td>EMAIL</td><td>ROLE</td></tr>
+        @{
+            if (Model != null)
+            {
+                foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.user.Id</td>
+                        <td>@user.user.Email</td>
+                        <td>
+                            @{
+                                if(user.roles != null)
+                                    foreach (var role in user.roles)
+                                    {
+                                        @role
+                                    }
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            
+        }
+    </table>
+</div>

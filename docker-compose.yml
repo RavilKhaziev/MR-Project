@@ -5,12 +5,14 @@ services:
     image: ${DOCKER_REGISTRY-}webserver
     build:
       context: .
-      dockerfile: WebServer/Dockerfile
+      dockerfile: FREEFOODSERVER/Dockerfile
     networks:
      - my-net
     volumes:
      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+    ports:
+     - "61742:80"
   postgres-server-db:
    container_name: user-db
    restart: always
