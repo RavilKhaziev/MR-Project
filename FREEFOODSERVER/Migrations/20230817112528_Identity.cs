@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -27,14 +28,18 @@ namespace FREEFOODSERVER.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserInfo",
+                name: "UserInfos",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Discriminator = table.Column<string>(type: "text", nullable: false),
+                    BannedCount = table.Column<int>(type: "integer", nullable: true),
+                    Discription = table.Column<string>(type: "text", nullable: true),
+                    ImagePreview = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserInfo", x => x.Id);
+                    table.PrimaryKey("PK_UserInfos", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -63,7 +68,7 @@ namespace FREEFOODSERVER.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    UserInfoId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UserInfoId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -83,9 +88,32 @@ namespace FREEFOODSERVER.Migrations
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AspNetUsers_UserInfo_UserInfoId",
+                        name: "FK_AspNetUsers_UserInfos_UserInfoId",
                         column: x => x.UserInfoId,
-                        principalTable: "UserInfo",
+                        principalTable: "UserInfos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Bags",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    ImagesId = table.Column<List<string>>(type: "text[]", nullable: true),
+                    Count = table.Column<long>(type: "bigint", nullable: false),
+                    Cost = table.Column<double>(type: "double precision", nullable: false),
+                    CompanyInfoId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bags", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Bags_UserInfos_CompanyInfoId",
+                        column: x => x.CompanyInfoId,
+                        principalTable: "UserInfos",
                         principalColumn: "Id");
                 });
 
@@ -215,6 +243,11 @@ namespace FREEFOODSERVER.Migrations
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bags_CompanyInfoId",
+                table: "Bags",
+                column: "CompanyInfoId");
         }
 
         /// <inheritdoc />
@@ -236,13 +269,16 @@ namespace FREEFOODSERVER.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "Bags");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "UserInfo");
+                name: "UserInfos");
         }
     }
 }

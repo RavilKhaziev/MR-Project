@@ -98,6 +98,5 @@ namespace FREEFOODSERVER.Controllers
             await _signInManager.SignOutAsync();
             return Ok();
         }
-
     }
 }
