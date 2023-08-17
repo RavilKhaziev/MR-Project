@@ -2,6 +2,6 @@
 {
     public class AdminInfo : UserInfo
     {
-        public int Banned_Count { get; set; } = 0;
+        public int BannedCount { get; set; }
     }
 }

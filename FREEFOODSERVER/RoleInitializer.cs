@@ -9,10 +9,12 @@ namespace FREEFOODSERVER
     {
         public static async Task<IdentityResult> InitializeAsync(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
         {
-            string adminEmail = "admin@gmail.com";
+            string adminEmail = "admin@example.com";
             string adminPassword = "_Aa123456";
             string userEmail = "user@example.com";
             string userPassword = "_Aa123456";
+            string companyEmail = "company@example.com";
+            string companyPassword = "_Aa123456";
             if (await roleManager.FindByNameAsync(UserRoles.Admin) == null)
             {
                 await roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
@@ -28,13 +30,12 @@ namespace FREEFOODSERVER
             if (await userManager.FindByNameAsync(adminEmail) == null)
             {
                 User admin = new User { Email = adminEmail, UserName = adminEmail, EmailConfirmed = true };
-                admin.UserInfo = new AdminInfo() {Banned_Count = 10};
+                admin.UserInfo = new AdminInfo() {BannedCount = 10};
                 IdentityResult result = await userManager.CreateAsync(admin, adminPassword);
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(admin, UserRoles.Admin);
                 }
-                return result;
             }
             if (await userManager.FindByNameAsync(userEmail) == null)
             {
@@ -45,9 +46,17 @@ namespace FREEFOODSERVER
                 {
                     await userManager.AddToRoleAsync(user, UserRoles.User);
                 }
-                return result;
             }
-
+            if (await userManager.FindByNameAsync(companyEmail) == null)
+            {
+                User company = new User { Email = companyEmail, UserName = companyEmail, EmailConfirmed = true };
+                company.UserInfo = new CompanyInfo() { Bags = new List<Bag>()};
+                IdentityResult result = await userManager.CreateAsync(company, companyPassword);
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(company, UserRoles.Company);
+                }
+            }
             return IdentityResult.Success;
         }
     }

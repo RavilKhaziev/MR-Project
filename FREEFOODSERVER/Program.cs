@@ -1,9 +1,12 @@
 using FREEFOODSERVER.Data;
 using FREEFOODSERVER.Models.Users;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Npgsql;
+using Swashbuckle.AspNetCore.Filters;
 using System.Runtime.CompilerServices;
 
 namespace FREEFOODSERVER
@@ -42,10 +45,17 @@ namespace FREEFOODSERVER
                     Title = "—ервис по индетификации пользователей",
                     Description = "—ервис управл€ет личными данными пользователей и их доступом к другим сервисам"
                 });
-
+  
             });
+            
+
             builder.Services.AddCors();
             var app = builder.Build();
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
 
             app.UseCors();
 

@@ -59,8 +59,16 @@ namespace FREEFOODSERVER.Controllers
             return RedirectToAction("Login", "Admin");
         }
 
-        [HttpGet("Index")]
+        [HttpPost("Logout")]
+        public async Task<IActionResult> POSTLogout(string? returnUrl)
+        {
+            await _signInManager.SignOutAsync();
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+            return View("Login");
+        }
 
+        [HttpGet("Index")]
         public async Task<IActionResult> Index()
         {
             List<UserViewModel> model = new();
