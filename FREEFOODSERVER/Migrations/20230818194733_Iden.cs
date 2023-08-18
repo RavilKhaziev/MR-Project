@@ -106,6 +106,8 @@ namespace FREEFOODSERVER.Migrations
                     ImagesId = table.Column<List<string>>(type: "text[]", nullable: true),
                     Count = table.Column<long>(type: "bigint", nullable: false),
                     Cost = table.Column<double>(type: "double precision", nullable: false),
+                    NumberOfViews = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "boolean", nullable: false),
                     CompanyInfoId = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>

@@ -19,5 +19,9 @@ namespace FREEFOODSERVER.Models
 
         [Required]
         public double Cost { get; set; } = 0;
+
+        public UInt64 NumberOfViews { get; set; }
+
+        public bool IsFavorite { get; set; }
     }
 }

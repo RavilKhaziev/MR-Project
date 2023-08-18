@@ -44,9 +44,15 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<List<string>>("ImagesId")
                         .HasColumnType("text[]");
 
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("NumberOfViews")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 

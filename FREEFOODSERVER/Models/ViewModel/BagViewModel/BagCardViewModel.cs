@@ -7,8 +7,6 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
     {
         public Guid Id { get; set; }
 
-        public CompanyPreviewViewModel Company { get; set; } = null!;
-
         public string Name { get; set; } = null!;
 
         public string? PreviewImageId { get; set; }
@@ -16,5 +14,14 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
         public uint Count { get; set; }
 
         public double Cost { get; set; }
+
+        public static implicit operator BagCardViewModel(Bag model) =>
+            new() {
+                Name = model.Name,
+                Cost = model.Cost,
+                Count = model.Count,
+                Id = model.Id,
+                PreviewImageId = model.ImagesId?.FirstOrDefault()
+            };
     }
 }

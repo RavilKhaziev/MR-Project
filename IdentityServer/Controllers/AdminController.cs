@@ -60,7 +60,6 @@ namespace WebServer.Controllers
                     else
                     {
 						return LocalRedirect("~/api/Admin/Home");
-                        return RedirectToAction("Home", "Admin");
                     }
                 }
                 else

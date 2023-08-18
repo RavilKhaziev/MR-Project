@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Npgsql;
 using Swashbuckle.AspNetCore.Filters;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace FREEFOODSERVER
@@ -51,7 +52,8 @@ namespace FREEFOODSERVER
                     Title = "Сервис по индетификации пользователей",
                     Description = "Сервис управляет личными данными пользователей и их доступом к другим сервисам"
                 });
-  
+                var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
             });
             
 
@@ -112,9 +114,9 @@ namespace FREEFOODSERVER
                 while (!db.Database.CanConnect())
                 { 
                     logger.LogError($"Can't connect to DB. {connectionString}. Wait 5 sec.");
-                    Thread.Sleep(500);
+                    Task.Delay(500);
                     if (count > 100)
-                        return;
+                        throw new Exception("Не возможно подключиться к БД");
                 }
                 try
                 {

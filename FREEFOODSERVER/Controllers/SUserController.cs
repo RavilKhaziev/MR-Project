@@ -91,17 +91,15 @@ namespace FREEFOODSERVER.Controllers
         }
 
         [HttpGet("Profile")]
-        public async Task<UserProfileModelView?> GETProfile(string? returnUrl)
+        public async Task<IActionResult> GETProfile(string? returnUrl)
         {
-            //AAAA????204
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email))
-                return null;
+                return BadRequest("Такого пользователя не существует");
             var user = await _userManager.FindByEmailAsync(email);
             if (user != null)
-                return new UserProfileModelView() { PhoneNumber = user.PhoneNumber, Email = user.Email };
-
-            return null;
+                return Ok(new UserProfileModelView() { PhoneNumber = user.PhoneNumber, Email = user.Email });
+            return BadRequest("Такого пользователя не существует");
         }
 
         [HttpPost("Logout")]

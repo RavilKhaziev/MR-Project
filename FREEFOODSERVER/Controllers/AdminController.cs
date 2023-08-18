@@ -31,7 +31,7 @@ namespace FREEFOODSERVER.Controllers
 
         [HttpGet("Login")]
         [AllowAnonymous]
-        public async Task<IActionResult> GETLogin(string? returnUrl)
+        public IActionResult GETLogin(string? returnUrl)
         {
             return View("Login");
         }
