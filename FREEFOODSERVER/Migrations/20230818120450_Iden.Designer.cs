@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230817112528_Identity")]
-    partial class Identity
+    [Migration("20230818120450_Iden")]
+    partial class Iden
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -291,6 +291,10 @@ namespace FREEFOODSERVER.Migrations
             modelBuilder.Entity("FREEFOODSERVER.Models.Users.CompanyInfo", b =>
                 {
                     b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Discription")
                         .HasColumnType("text");

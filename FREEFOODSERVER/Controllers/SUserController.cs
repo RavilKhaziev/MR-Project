@@ -6,6 +6,7 @@ using FREEFOODSERVER.Models.ViewModel.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FREEFOODSERVER.Controllers
 {
@@ -17,49 +18,65 @@ namespace FREEFOODSERVER.Controllers
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<User> _signInManager;
+        private readonly ILogger<SUserController> _logger;
         public SUserController(UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<User> signInManager
+            SignInManager<User> signInManager,
+            ILogger<SUserController> logger
             )
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
+            _logger = logger;
         }
 
         [HttpPost("Registration")]
         [AllowAnonymous]
         public async Task<IActionResult> POSTRegistration([FromBody] UserRegistrationViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest("Ошибка в данных регистрации");
+            User user = new User
             {
-                User user = new User {Email = model.Email,
-                    UserName = model.Name,
-                    EmailConfirmed = true,
-                    UserInfo = new StandardUserInfo(){}
-                };
-
-                var result = await _userManager.CreateAsync(user, model.Password);
-
-                if (result.Succeeded)
-                {
-                    await _signInManager.SignInAsync(user, true);
-                    return Ok();
+                Email = model.Email,
+                UserName = model.Email,
+                EmailConfirmed = true,
+                UserInfo = new StandardUserInfo() {
+                    UserName = model.Name
                 }
-                else
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+                var ruleReturn = await _userManager.AddToRoleAsync(user, UserRoles.User);
+                if (!ruleReturn.Succeeded)
                 {
-                    foreach (var error in result.Errors)
+                    foreach (var error in ruleReturn.Errors)
                     {
                         ModelState.AddModelError(string.Empty, error.Description);
                     }
+                    await _userManager.DeleteAsync(user);
+                    return BadRequest("Ошибка при выдаче роли");
+                }
+                await _signInManager.SignInAsync(user, true);
+                return Ok();
+
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
-            return BadRequest();
+            return BadRequest(ModelState);
         }
 
         [HttpPost("Login")]
         [AllowAnonymous]
-        public async Task<Microsoft.AspNetCore.Identity.SignInResult> POSTLogin([FromBody]LoginViewModel model)
+        public async Task<Microsoft.AspNetCore.Identity.SignInResult> POSTLogin([FromBody] LoginViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -76,27 +93,21 @@ namespace FREEFOODSERVER.Controllers
         [HttpGet("Profile")]
         public async Task<UserProfileModelView?> GETProfile(string? returnUrl)
         {
-            
-            if (User == null || User.Identities == null || User.Identities.Count() > 0) 
+            //AAAA????204
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email))
                 return null;
-            if (!User.Identities.FirstOrDefault().IsAuthenticated)
-                return null;
-            string? Email = User.Identities?.FirstOrDefault()?.Name;
-            if (string.IsNullOrEmpty(Email))
-                return null;
-            var user = await _userManager.FindByEmailAsync(Email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user != null)
-                return new UserProfileModelView() {PhoneNumber = user?.PhoneNumber, Email = user?.Email };
+                return new UserProfileModelView() { PhoneNumber = user.PhoneNumber, Email = user.Email };
 
             return null;
         }
 
         [HttpPost("Logout")]
-        [Authorize(Roles = UserRoles.User)]
-        public async Task<IActionResult> POSTLogout(string? returnUrl)
+        public async Task POSTLogout()
         {
             await _signInManager.SignOutAsync();
-            return Ok();
         }
     }
 }

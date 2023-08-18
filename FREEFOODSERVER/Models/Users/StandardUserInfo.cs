@@ -2,7 +2,7 @@
 {
     public class StandardUserInfo : UserInfo
     {
-
-        public int number { get; set; }
+        public string UserName { get; set; } = null!;
+       
     }
 }

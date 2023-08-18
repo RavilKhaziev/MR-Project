@@ -2,7 +2,9 @@
 {
     public class CompanyInfo : UserInfo
     { 
-        public string? Discription { get; set; }
+        public string CompanyName { get; set; } = null!;
+
+        public string? Discription { get; set; } 
 
         public List<Bag> Bags { get; set; } = new List<Bag>();
 

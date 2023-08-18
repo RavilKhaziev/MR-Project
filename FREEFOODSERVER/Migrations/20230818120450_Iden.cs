@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     /// <inheritdoc />
-    public partial class Identity : Migration
+    public partial class Iden : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -34,6 +34,7 @@ namespace FREEFOODSERVER.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Discriminator = table.Column<string>(type: "text", nullable: false),
                     BannedCount = table.Column<int>(type: "integer", nullable: true),
+                    CompanyName = table.Column<string>(type: "text", nullable: true),
                     Discription = table.Column<string>(type: "text", nullable: true),
                     ImagePreview = table.Column<string>(type: "text", nullable: true)
                 },

@@ -4,11 +4,10 @@ using FREEFOODSERVER.Models.Users;
 using FREEFOODSERVER.Models.ViewModel;
 using FREEFOODSERVER.Models.ViewModel.BagViewModel;
 using FREEFOODSERVER.Models.ViewModel.Company;
-using FREEFOODSERVER.Models.ViewModel.NSUser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Cryptography.X509Certificates;
+using System.Security.Claims;
 
 namespace FREEFOODSERVER.Controllers
 {
@@ -37,48 +36,61 @@ namespace FREEFOODSERVER.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> POSTRegistration([FromBody] CompanyRegistrationViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest();
+
+            User user = new User
             {
-                User user = new User
-                {
-                    Email = model.Email,
-                    UserName = model.Name,
-                    EmailConfirmed = true,
-                    PhoneNumber = model.PhoneNumber,
-                    UserInfo = new CompanyInfo() {}
-                };
-
-                var result = await _userManager.CreateAsync(user, model.Password);
-
-                if (result.Succeeded)
-                {
-                    await _signInManager.SignInAsync(user, true);
-                    return Ok();
+                Email = model.Email,
+                EmailConfirmed = true,
+                UserName = model.Email,
+                PhoneNumber = model.PhoneNumber,
+                UserInfo = new CompanyInfo(){ 
+                    CompanyName = model.Name,
+                    Bags = new()
                 }
-                else
+            };
+
+            
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+                var ruleReturn = await _userManager.AddToRoleAsync(user, UserRoles.Company);
+                if (!ruleReturn.Succeeded)
                 {
-                    foreach (var error in result.Errors)
+                    foreach (var error in ruleReturn.Errors)
                     {
                         ModelState.AddModelError(string.Empty, error.Description);
                     }
+                    await _userManager.DeleteAsync(user);
+                    return BadRequest("Ошибка при выдаче роли");
                 }
+                await _signInManager.SignInAsync(user, true);
+                return Ok();
             }
-            return BadRequest();
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return BadRequest(ModelState);
+            }
+
         }
 
         [HttpPost("Login")]
         [AllowAnonymous]
         public async Task<Microsoft.AspNetCore.Identity.SignInResult> POSTLogin([FromBody] LoginViewModel model)
         {
-            if (ModelState.IsValid)
-            {
+            if (!ModelState.IsValid) return Microsoft.AspNetCore.Identity.SignInResult.Failed;
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user != null)
                 {
-                    var result = await _signInManager.PasswordSignInAsync(user, model.Password, true, false);
-                    return result;
+                    await _signInManager.SignInAsync(user, false);
+                return Microsoft.AspNetCore.Identity.SignInResult.Success;
                 }
-            }
             return Microsoft.AspNetCore.Identity.SignInResult.Failed;
         }
 
@@ -93,11 +105,11 @@ namespace FREEFOODSERVER.Controllers
         /// </summary>
         /// <returns></returns>
 
-        
+
         [HttpPut("Bag")]
-        public async Task<IActionResult> PUTBagCreate([FromBody]BagCreateViewModel model)
-        {   
-            var email = User.Identities.FirstOrDefault().Name;
+        public async Task<IActionResult> PUTBagCreate([FromBody] BagCreateViewModel model)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null) return BadRequest("User no exist");
@@ -111,34 +123,33 @@ namespace FREEFOODSERVER.Controllers
         /// Получение всех Bag или одного
         /// </summary>
         /// <param name="bagId"></param>
-        /// <returns></returns>
         [HttpGet("Bag")]
-        public async Task<List<BagInfoViewModel>?> GETBagInfo([FromBody]Guid? bagId)
+        public async Task<IActionResult> GETBagInfo([FromBody] Guid? bagId)
         {
-            var email = User.Identities.FirstOrDefault().Name;
-            if (string.IsNullOrEmpty(email)) return null;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest(new List<BagInfoViewModel>());
             var user = await _userManager.FindByEmailAsync(email);
-            if (user == null) return null;
-            if (user.UserInfo == null) return null;
+            if (user == null) return BadRequest(new List<BagInfoViewModel>());
+            if (user.UserInfo == null) return BadRequest(new List<BagInfoViewModel>());
             var info = (CompanyInfo)user.UserInfo;
             var result = new List<BagInfoViewModel>();
             if (bagId == null)
             {
-                result = info.Bags.ConvertAll(x => (BagInfoViewModel)x); 
+                result = info.Bags.ConvertAll(x => (BagInfoViewModel)x);
             }
             else
             {
                 var bag = info.Bags.Find(x => x.Id == bagId);
-                if (bag == null) return null;
+                if (bag == null) return BadRequest(new List<BagInfoViewModel>());
                 result = new List<BagInfoViewModel>() { bag };
             }
-            return result;
+            return Ok(result);
         }
 
         [HttpDelete("Bag")]
-        public async Task<IActionResult> DELETEBag([FromBody]Guid bagId)
+        public async Task<IActionResult> DELETEBag([FromBody] Guid bagId)
         {
-            var email = User.Identities.FirstOrDefault().Name;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null) return BadRequest("User no exist");
