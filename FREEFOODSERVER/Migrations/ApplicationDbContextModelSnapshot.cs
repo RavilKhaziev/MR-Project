@@ -289,6 +289,10 @@ namespace FREEFOODSERVER.Migrations
                 {
                     b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
 
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Discription")
                         .HasColumnType("text");
 

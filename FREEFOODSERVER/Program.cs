@@ -1,3 +1,4 @@
+using FREEFOODSERVER.Areas.Identity;
 using FREEFOODSERVER.Data;
 using FREEFOODSERVER.Models.Users;
 using Microsoft.AspNetCore.Hosting;
@@ -16,20 +17,25 @@ namespace FREEFOODSERVER
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            
+
 
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             NpgsqlDataSourceBuilder npgBuilder = new NpgsqlDataSourceBuilder(connectionString);
             using var dataSource = npgBuilder.Build();
-            builder.Services.AddDbContext<ApplicationDbContext>(options => 
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
             {
-                    options.UseNpgsql(dataSource, builder => builder.EnableRetryOnFailure());
+                options.UseNpgsql(dataSource, builder => builder.EnableRetryOnFailure());
             });
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
-            builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false)
+            builder.Services.AddIdentity<User, IdentityRole>(options => {
+                options.SignIn.RequireConfirmedAccount = false;
+                options.User.RequireUniqueEmail = true;
+                
+                
+            })
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services.AddControllersWithViews();
 
@@ -105,8 +111,8 @@ namespace FREEFOODSERVER
                 int count = 0;
                 while (!db.Database.CanConnect())
                 { 
-                    logger.LogError("Can't connect to DB. Wait 5 sec.");
-                    Thread.Sleep(5000);
+                    logger.LogError($"Can't connect to DB. {connectionString}. Wait 5 sec.");
+                    Thread.Sleep(500);
                     if (count > 100)
                         return;
                 }

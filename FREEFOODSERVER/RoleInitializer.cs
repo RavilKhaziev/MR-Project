@@ -39,8 +39,8 @@ namespace FREEFOODSERVER
             }
             if (await userManager.FindByNameAsync(userEmail) == null)
             {
-                User user = new User { Email = userEmail, UserName = userEmail, EmailConfirmed = true };
-                user.UserInfo = new StandardUserInfo() { number = 1 };
+                User user = new User { Email = userEmail, UserName = "Cool name", EmailConfirmed = true };
+                user.UserInfo = new StandardUserInfo() { UserName = "Cool name" };
                 IdentityResult result = await userManager.CreateAsync(user, userPassword);
                 if (result.Succeeded)
                 {
@@ -49,8 +49,8 @@ namespace FREEFOODSERVER
             }
             if (await userManager.FindByNameAsync(companyEmail) == null)
             {
-                User company = new User { Email = companyEmail, UserName = companyEmail, EmailConfirmed = true };
-                company.UserInfo = new CompanyInfo() { Bags = new List<Bag>()};
+                User company = new User { Email = companyEmail, UserName = "Soul Good", EmailConfirmed = true };
+                company.UserInfo = new CompanyInfo() { Bags = new List<Bag>(), CompanyName = "Soul Good"};
                 IdentityResult result = await userManager.CreateAsync(company, companyPassword);
                 if (result.Succeeded)
                 {
