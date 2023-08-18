@@ -4,7 +4,7 @@ namespace FREEFOODSERVER.Models.ViewModel.Company
 {
     public class CompanyPreviewViewModel
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; } = null!;
         
         public string? ImagePreview { get; set; }
 

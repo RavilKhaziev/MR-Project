@@ -7,6 +7,7 @@
     <UserSecretsId>aspnet-FREEFOODSERVER-bf5fe842-16d0-4687-b03d-659e84e47c34</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

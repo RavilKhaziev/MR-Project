@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230818120450_Iden")]
+    [Migration("20230818194733_Iden")]
     partial class Iden
     {
         /// <inheritdoc />
@@ -47,9 +47,15 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<List<string>>("ImagesId")
                         .HasColumnType("text[]");
 
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("NumberOfViews")
+                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("Id");
 
