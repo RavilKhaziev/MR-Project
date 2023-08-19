@@ -7,6 +7,7 @@ using FREEFOODSERVER.Models.ViewModel.Company;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
@@ -52,7 +53,7 @@ namespace FREEFOODSERVER.Controllers
         ///     Ошибка в теле запрос или cookie(Нужно перезайти в аккаунт).
         /// </response>
         /// <response code="404">If the item is null</response>
-        ///  /// <response code="200"></response>
+        /// <response code="200"></response>
         [HttpPost("Registration")]
         [AllowAnonymous]
         [Produces("application/json")]
@@ -119,7 +120,7 @@ namespace FREEFOODSERVER.Controllers
         ///     Ошибка в теле запрос или cookie(Нужно перезайти в аккаунт).
         /// </response>
         /// <response code="404">If the item is null</response>
-        ///  /// <response code="200"></response>
+        /// <response code="200"></response>
         [HttpPost("Login")]
         [AllowAnonymous]
         [Produces("application/json")]
@@ -164,7 +165,7 @@ namespace FREEFOODSERVER.Controllers
         ///     Ошибка в теле запрос или cookie(Нужно перезайти в аккаунт).
         /// </response>
         /// <response code="404">If the item is null</response>
-        ///  /// <response code="200"></response>
+        /// <response code="200"></response>
         [HttpPut("Bag")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -184,7 +185,6 @@ namespace FREEFOODSERVER.Controllers
 
         /// <summary>
         ///     Позволяет получить все корзины или 1 определённого бокса.
-        ///     !!!См. описание параметров!!!
         /// </summary>
         /// <param name="bagId"> Id запрашиваемой корзины.
         ///      !Внимание!
@@ -193,29 +193,6 @@ namespace FREEFOODSERVER.Controllers
         ///      !Внимание!
         /// </param>
         /// <returns>
-        /// 
-        /// Краткая информация
-        /// [
-        ///     {
-        ///        Guid Id - Id бокса
-        ///        string Name - Название бокса 
-        ///        string? PreviewImageId - изображение для предпросмотра
-        ///        uint Count - Кол-во боксов 
-        ///        double Cost - Цена бокса 
-        ///     }, ...
-        /// ]
-        /// 
-        /// Полная информация
-        /// {
-        ///     Guid Id - Id бокса
-        ///     string Name  - Название бокса 
-        ///     string? Description - Описание бокса
-        ///     List<string>? ImagesId - изображения бокса
-        ///     uint Count - Кол-во боксов 
-        ///     double Cost - Цена бокса 
-        ///     bool IsFavorite - Избранное. Если true то бокса в избранном
-        ///     UInt64 NumberOfViews - Кол-во просмотров
-        /// }
         /// </returns>
         /// <response code="400">
         /// Возникает при:
@@ -223,7 +200,7 @@ namespace FREEFOODSERVER.Controllers
         ///     Ошибка в теле запрос или cookie(Нужно перезайти в аккаунт).
         /// </response>
         /// <response code="404">If the item is null</response>
-        ///  /// <response code="200"></response>
+        /// <response code="200"></response>
         [HttpGet("Bag")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -294,6 +271,7 @@ namespace FREEFOODSERVER.Controllers
         ///         string? PreviewImageId - изображение для предпросмотра
         ///         uint Count - Кол-во боксов 
         ///         double Cost - Цена бокса 
+        ///         bool IsFavorite - Находиться ли в избранном
         ///     },...
         /// ]
         /// </returns>
@@ -326,6 +304,7 @@ namespace FREEFOODSERVER.Controllers
                 Count = bag.Count,
                 Name = bag.Name,
                 PreviewImageId = bag.ImagesId?.FirstOrDefault(),
+                IsFavorite = bag.IsFavorite,
             });
         }
 
@@ -386,7 +365,7 @@ namespace FREEFOODSERVER.Controllers
         /// </response>
         /// <response code="404">If the item is null</response>
         /// <response code="200"></response>
-        [HttpPost("Profile")]
+        [HttpGet("Profile")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -405,6 +384,64 @@ namespace FREEFOODSERVER.Controllers
                 Discription = info.Discription,
                 ImagePreview = info.ImagePreview
             }) ;
+        }
+
+
+        /// <summary>
+        /// Редактирование профиля
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Изменёный профиль</returns>
+        [HttpPost("Profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> POSTEditProfile([FromBody]ProfileEditViewModel model)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound("User no exist");
+            if (user.UserInfo == null) return NotFound("User no Init");
+            var info = ((CompanyInfo)user.UserInfo);
+            if(!string.IsNullOrEmpty(model.ImagePreview)) info.ImagePreview = model.ImagePreview;
+            if(!string.IsNullOrEmpty(model.CompanyName)) info.CompanyName = model.CompanyName;
+            if(!string.IsNullOrEmpty(model.Discription)) info.Discription = model.Discription;
+            return Ok(new CompanyProfileViewModel()
+            {
+                CompanyName = info.CompanyName,
+                Discription = info.Discription,
+                ImagePreview = info.ImagePreview
+            });
+        }
+
+        /// <summary>
+        /// Реадактирование бокса 
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Bag")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BagInfoViewModel))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> POSTBagEdit([FromBody]BagEditViewModel model)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound("User no exist");
+            if (user.UserInfo == null) return NotFound("User no Init");
+            var bag = ((CompanyInfo)user.UserInfo).Bags.Find(x => x.Id == model.Id);
+            if (bag == null) return NotFound("Bag not found");
+
+            if (!string.IsNullOrEmpty(model.Description)) bag.Description = model.Description;
+            if (!string.IsNullOrEmpty(model.Name)) bag.Name = model.Name;
+            if (model.Count != null) bag.Count = (uint)model.Count;
+            if (model.Cost != null) bag.Cost = (double)model.Cost;
+            if (model.ImagesId != null) bag.ImagesId = model.ImagesId;
+
+            await _userManager.UpdateAsync(user);
+            return Ok((BagInfoViewModel)bag);
         }
 
     }
