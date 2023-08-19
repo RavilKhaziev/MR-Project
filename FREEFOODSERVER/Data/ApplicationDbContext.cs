@@ -9,7 +9,7 @@ namespace FREEFOODSERVER.Data
     public class ApplicationDbContext : IdentityDbContext<User>
     {
         public DbSet<Bag> Bags { get; set; }
-        public DbSet<UserInfo> UserInfos { get; set; }
+        public DbSet<StandardUserInfo> UserInfos { get; set; }
         public DbSet<AdminInfo> AdminInfos { get; set; }
         public DbSet<CompanyInfo> CompanyInfos { get; set; }
 

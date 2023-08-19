@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FREEFOODSERVER.Models.Users;
+using System.ComponentModel.DataAnnotations;
 
 namespace FREEFOODSERVER.Models
 {
@@ -6,6 +7,9 @@ namespace FREEFOODSERVER.Models
     {
         [Key]
         public Guid Id { get; set; }
+
+        [Required]
+        public User? Owner { get; set; } = null!;
 
         [Required]
         public string Name { get; set; } = null!;

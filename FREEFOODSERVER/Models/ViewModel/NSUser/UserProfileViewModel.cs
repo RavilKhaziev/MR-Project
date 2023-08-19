@@ -1,6 +1,6 @@
 ﻿namespace FREEFOODSERVER.Models.ViewModel.User
 {
-    public class UserProfileModelView
+    public class UserProfileViewModel
     {
         public string? PhoneNumber { get; set; }
 

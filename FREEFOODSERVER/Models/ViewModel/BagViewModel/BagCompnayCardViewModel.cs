@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 {
-    public class BagCardViewModel
+    public class BagCompnayCardViewModel
     {
         public Guid Id { get; set; }
 
@@ -17,7 +17,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public bool IsFavorite { get; set; } 
 
-        public static implicit operator BagCardViewModel(Bag model) =>
+        public static implicit operator BagCompnayCardViewModel(Bag model) =>
             new() {
                 Name = model.Name,
                 Cost = model.Cost,
