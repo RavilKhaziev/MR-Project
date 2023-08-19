@@ -107,5 +107,6 @@ namespace FREEFOODSERVER.Controllers
         {
             await _signInManager.SignOutAsync();
         }
+
     }
 }

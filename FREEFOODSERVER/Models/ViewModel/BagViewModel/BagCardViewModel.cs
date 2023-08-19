@@ -15,13 +15,17 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public double Cost { get; set; }
 
+        public bool IsFavorite { get; set; } 
+
         public static implicit operator BagCardViewModel(Bag model) =>
             new() {
                 Name = model.Name,
                 Cost = model.Cost,
                 Count = model.Count,
                 Id = model.Id,
-                PreviewImageId = model.ImagesId?.FirstOrDefault()
+                PreviewImageId = model.ImagesId?.FirstOrDefault(),
+                IsFavorite = model.IsFavorite,
+                
             };
     }
 }
