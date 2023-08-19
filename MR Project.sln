@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityServer", "IdentityS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FREEFOODSERVER", "FREEFOODSERVER\FREEFOODSERVER.csproj", "{11D605DD-676C-45EF-996A-C6ED2B6BD550}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerTest", "..\ServerTest\ServerTest.csproj", "{5F652384-1507-485C-BB91-0966012B15DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{11D605DD-676C-45EF-996A-C6ED2B6BD550}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11D605DD-676C-45EF-996A-C6ED2B6BD550}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11D605DD-676C-45EF-996A-C6ED2B6BD550}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F652384-1507-485C-BB91-0966012B15DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F652384-1507-485C-BB91-0966012B15DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F652384-1507-485C-BB91-0966012B15DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F652384-1507-485C-BB91-0966012B15DD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
