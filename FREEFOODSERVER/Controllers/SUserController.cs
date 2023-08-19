@@ -97,9 +97,10 @@ namespace FREEFOODSERVER.Controllers
             if (string.IsNullOrEmpty(email))
                 return BadRequest("Такого пользователя не существует");
             var user = await _userManager.FindByEmailAsync(email);
-            if (user != null)
-                return Ok(new UserProfileModelView() { PhoneNumber = user.PhoneNumber, Email = user.Email });
-            return BadRequest("Такого пользователя не существует");
+            if (user == null) return NotFound("User no exist");
+            if (user.UserInfo == null) return NotFound("User no Init");
+            var info = (StandardUserInfo)user.UserInfo;
+            return Ok(new UserProfileModelView() { PhoneNumber = user.PhoneNumber, Email = user.Email, Name = info.UserName });
         }
 
         [HttpPost("Logout")]
