@@ -54,9 +54,15 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<decimal>("NumberOfViews")
                         .HasColumnType("numeric(20,0)");
 
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyInfoId");
+
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Bags");
                 });
@@ -142,7 +148,7 @@ namespace FREEFOODSERVER.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserInfos");
+                    b.ToTable("UserInfo");
 
                     b.HasDiscriminator<string>("Discriminator").HasValue("UserInfo");
 
@@ -308,11 +314,30 @@ namespace FREEFOODSERVER.Migrations
                     b.HasDiscriminator().HasValue("CompanyInfo");
                 });
 
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.StandardUserInfo", b =>
+                {
+                    b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasDiscriminator().HasValue("StandardUserInfo");
+                });
+
             modelBuilder.Entity("FREEFOODSERVER.Models.Bag", b =>
                 {
                     b.HasOne("FREEFOODSERVER.Models.Users.CompanyInfo", null)
                         .WithMany("Bags")
                         .HasForeignKey("CompanyInfoId");
+
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>

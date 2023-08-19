@@ -28,7 +28,7 @@ namespace FREEFOODSERVER.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserInfos",
+                name: "UserInfo",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -36,11 +36,12 @@ namespace FREEFOODSERVER.Migrations
                     BannedCount = table.Column<int>(type: "integer", nullable: true),
                     CompanyName = table.Column<string>(type: "text", nullable: true),
                     Discription = table.Column<string>(type: "text", nullable: true),
-                    ImagePreview = table.Column<string>(type: "text", nullable: true)
+                    ImagePreview = table.Column<string>(type: "text", nullable: true),
+                    UserName = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserInfos", x => x.Id);
+                    table.PrimaryKey("PK_UserInfo", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -89,35 +90,11 @@ namespace FREEFOODSERVER.Migrations
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AspNetUsers_UserInfos_UserInfoId",
+                        name: "FK_AspNetUsers_UserInfo_UserInfoId",
                         column: x => x.UserInfoId,
-                        principalTable: "UserInfos",
+                        principalTable: "UserInfo",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Bags",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    ImagesId = table.Column<List<string>>(type: "text[]", nullable: true),
-                    Count = table.Column<long>(type: "bigint", nullable: false),
-                    Cost = table.Column<double>(type: "double precision", nullable: false),
-                    NumberOfViews = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    IsFavorite = table.Column<bool>(type: "boolean", nullable: false),
-                    CompanyInfoId = table.Column<Guid>(type: "uuid", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Bags", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Bags_UserInfos_CompanyInfoId",
-                        column: x => x.CompanyInfoId,
-                        principalTable: "UserInfos",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -205,6 +182,37 @@ namespace FREEFOODSERVER.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Bags",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    OwnerId = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    ImagesId = table.Column<List<string>>(type: "text[]", nullable: true),
+                    Count = table.Column<long>(type: "bigint", nullable: false),
+                    Cost = table.Column<double>(type: "double precision", nullable: false),
+                    NumberOfViews = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    IsFavorite = table.Column<bool>(type: "boolean", nullable: false),
+                    CompanyInfoId = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bags", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Bags_AspNetUsers_OwnerId",
+                        column: x => x.OwnerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Bags_UserInfo_CompanyInfoId",
+                        column: x => x.CompanyInfoId,
+                        principalTable: "UserInfo",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -251,6 +259,11 @@ namespace FREEFOODSERVER.Migrations
                 name: "IX_Bags_CompanyInfoId",
                 table: "Bags",
                 column: "CompanyInfoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bags_OwnerId",
+                table: "Bags",
+                column: "OwnerId");
         }
 
         /// <inheritdoc />
@@ -281,7 +294,7 @@ namespace FREEFOODSERVER.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "UserInfos");
+                name: "UserInfo");
         }
     }
 }

@@ -1,11 +1,15 @@
-﻿using FREEFOODSERVER.Models;
+﻿using FREEFOODSERVER.Data;
+using FREEFOODSERVER.Models;
 using FREEFOODSERVER.Models.Users;
 using FREEFOODSERVER.Models.ViewModel;
+using FREEFOODSERVER.Models.ViewModel.BagViewModel;
+using FREEFOODSERVER.Models.ViewModel.Company;
 using FREEFOODSERVER.Models.ViewModel.NSUser;
 using FREEFOODSERVER.Models.ViewModel.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace FREEFOODSERVER.Controllers
@@ -19,16 +23,19 @@ namespace FREEFOODSERVER.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<SUserController> _logger;
+        private readonly ApplicationDbContext _db;
         public SUserController(UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<User> signInManager,
-            ILogger<SUserController> logger
+            ILogger<SUserController> logger,
+            ApplicationDbContext db
             )
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
             _logger = logger;
+            _db = db;
         }
 
         [HttpPost("Registration")]
@@ -76,22 +83,19 @@ namespace FREEFOODSERVER.Controllers
 
         [HttpPost("Login")]
         [AllowAnonymous]
-        public async Task<Microsoft.AspNetCore.Identity.SignInResult> POSTLogin([FromBody] LoginViewModel model)
+        public async Task<IActionResult> POSTLogin([FromBody] LoginViewModel model)
         {
-            if (ModelState.IsValid)
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user != null)
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user != null)
-                {
-                    var result = await _signInManager.PasswordSignInAsync(user, model.Password, true, false);
-                    return result;
-                }
+                var result = await _signInManager.PasswordSignInAsync(user, model.Password, true, false);
+                return Ok(result);
             }
-            return Microsoft.AspNetCore.Identity.SignInResult.Failed;
+            return BadRequest(Microsoft.AspNetCore.Identity.SignInResult.Failed);
         }
 
         [HttpGet("Profile")]
-        public async Task<IActionResult> GETProfile(string? returnUrl)
+        public async Task<IActionResult> GETProfile()
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email))
@@ -100,7 +104,7 @@ namespace FREEFOODSERVER.Controllers
             if (user == null) return NotFound("User no exist");
             if (user.UserInfo == null) return NotFound("User no Init");
             var info = (StandardUserInfo)user.UserInfo;
-            return Ok(new UserProfileModelView() { PhoneNumber = user.PhoneNumber, Email = user.Email, Name = info.UserName });
+            return Ok(new UserProfileViewModel() { PhoneNumber = user.PhoneNumber, Email = user.Email, Name = info.UserName });
         }
 
         [HttpPost("Logout")]
@@ -108,6 +112,58 @@ namespace FREEFOODSERVER.Controllers
         {
             await _signInManager.SignOutAsync();
         }
+
+        /// <summary>
+        /// Редактирование профиля
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>Изменёный профиль</returns>
+        [HttpPost("Profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> POSTEditProfile([FromBody] UserProfileEditViewModel model)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound("User no exist");
+            if (user.UserInfo == null) return NotFound("User no Init");
+            var info = ((StandardUserInfo)user.UserInfo);
+            if (!string.IsNullOrEmpty(model.UserName)) info.UserName = model.UserName;
+            return Ok(new UserProfileViewModel()
+            {
+               Name = model.UserName,
+               PhoneNumber = user.PhoneNumber,
+               Email = user.Email,
+               
+            });
+        }
+
+        [HttpPost("Bag")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> POSTBags()
+        {
+            //var result = new List<Bag>(); 
+            //if (string.IsNullOrEmpty(filter))
+            //{
+                
+            //}
+            //else
+            //{
+            //    var filters = filter.Split(' ');
+            //    foreach (var a in filters)
+            //    {
+            //        _db.Bags.IgnoreAutoIncludes().Include(x => x.Owner).Where(x => x.);
+            //    }
+            //}
+
+            return Ok();
+
+        }
+
 
     }
 }

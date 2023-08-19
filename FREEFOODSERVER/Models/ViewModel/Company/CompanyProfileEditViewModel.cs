@@ -1,6 +1,6 @@
 ﻿namespace FREEFOODSERVER.Models.ViewModel.Company
 {
-    public class ProfileEditViewModel
+    public class CompanyProfileEditViewModel
     {
         public string? CompanyName { get; set; }
 
