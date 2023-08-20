@@ -73,7 +73,8 @@ namespace FREEFOODSERVER.Controllers
                 UserInfo = new CompanyInfo(){ 
                     CompanyName = model.Name,
                     Bags = new()
-                }
+                },
+                
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -252,7 +253,7 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DELETEBag([FromBody] Guid bagId)
+        public async Task<IActionResult> DELETEBag([FromQuery] Guid bagId)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
