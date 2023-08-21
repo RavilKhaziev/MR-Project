@@ -7,5 +7,9 @@
         public string? Discription { get; set; }
 
         public string? ImagePreview { get; set; }
+
+        public string? PhoneNumber { get; set; }
+
+        public string? Email { get; set; }
     }
 }

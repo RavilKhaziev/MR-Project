@@ -393,7 +393,9 @@ namespace FREEFOODSERVER.Controllers
             {
                 CompanyName = info.CompanyName,
                 Discription = info.Discription,
-                ImagePreview = info.ImagePreview
+                ImagePreview = info.ImagePreview,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber
             }) ;
         }
 
@@ -422,7 +424,9 @@ namespace FREEFOODSERVER.Controllers
             {
                 CompanyName = info.CompanyName,
                 Discription = info.Discription,
-                ImagePreview = info.ImagePreview
+                ImagePreview = info.ImagePreview,
+                PhoneNumber = user.PhoneNumber,
+                Email = user.Email,
             });
         }
 
