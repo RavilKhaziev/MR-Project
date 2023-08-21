@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyModel.Resolution;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
 namespace FREEFOODSERVER.Controllers
@@ -24,6 +26,15 @@ namespace FREEFOODSERVER.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly ILogger<SUserController> _logger;
         private readonly ApplicationDbContext _db;
+
+        private Dictionary<string, Func<IQueryable<Bag>, IQueryable<Bag>>> _filters = new()
+        {
+            { "popular", (x) =>  {return x.OrderBy(p => p.NumberOfViews); } }
+        }; 
+        
+
+        
+
         public SUserController(UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<User> signInManager,
@@ -144,21 +155,25 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> POSTBags()
+        public async Task<IActionResult> POSTBags([FromBody]IndexPageViewModel model)
         {
-            //var result = new List<Bag>(); 
-            //if (string.IsNullOrEmpty(filter))
-            //{
-                
-            //}
-            //else
-            //{
-            //    var filters = filter.Split(' ');
-            //    foreach (var a in filters)
-            //    {
-            //        _db.Bags.IgnoreAutoIncludes().Include(x => x.Owner).Where(x => x.);
-            //    }
-            //}
+            var result = new List<Bag>();
+            if (string.IsNullOrEmpty(model.Filter))
+            {
+            }
+            else
+            {
+                var filters = model.Filter.Split();
+                var bags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Owner);
+                foreach (var a in filters)
+                {
+                    if (_filters.ContainsKey(a))
+                    {
+                        _filters[a](bags);
+                    }
+                }
+                bags.Take(BagPageViewModel.PAGESIZE);
+            }
 
             return Ok();
 
