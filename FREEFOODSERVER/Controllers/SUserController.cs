@@ -176,11 +176,16 @@ namespace FREEFOODSERVER.Controllers
         /// </summary>
         [HttpGet("Company")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> GETEditProfile()
+        public async Task<IActionResult> GETCompany()
         {
-            
-
-            return Ok(new());
+            var result = await _db.CompanyInfos.AsNoTracking().ToListAsync();
+            return Ok(result.ConvertAll(x => new UserCompanyProfileViewModel()
+            {
+                CompanyName = x.CompanyName,
+                AvgEvaluation = x.AvgEvaluation,
+                ImagePreview = x.ImagePreview,
+                Id = x.UserId,
+            }));
         }
 
 
