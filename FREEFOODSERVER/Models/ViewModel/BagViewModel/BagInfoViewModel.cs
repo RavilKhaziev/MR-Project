@@ -22,9 +22,15 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
         [Required]
         public double Cost { get; set; } = 0;
 
-        public bool IsFavorite { get; set; }
-
         public UInt64 NumberOfViews { get; set; }
+
+        public List<string> Tags { get; set; } = null!;
+
+        public DateTime Created { get; set; }
+
+        public bool IsDisabled { get; set; }
+
+        public float? AvgEvaluation { get; set; }
 
         public static implicit operator BagInfoViewModel(Bag model)
         {
@@ -36,9 +42,15 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
                 Cost = model.Cost,
                 Description = model.Description,
                 Name = model.Name,
-                IsFavorite = model.IsFavorite,
                 NumberOfViews = model.NumberOfViews,
+                Tags = model.Tags,
+                Created = model.Created,
+                IsDisabled = model.IsDisabled,
+                AvgEvaluation = model.AvgEvaluation,
             };
         }
+
+        
+
     }
 }

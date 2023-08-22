@@ -182,14 +182,16 @@ namespace FREEFOODSERVER.Controllers
             ((CompanyInfo)user.UserInfo).Bags.Add(new()
             {
                 Cost = model.Cost,
+                Company = user,
                 Count = model.Count,
                 Description = model.Description,
                 ImagesId = model.ImagesId,
-                IsFavorite = false,
                 Name = model.Name,
                 NumberOfViews = 0,
-                Owner = user
-            });
+                Tags = model.Tags ?? new(),
+                IsDisabled = model.IsDisabled ?? true,
+                Created = model.Created ?? DateTime.Now
+            }) ;
             var result = await _userManager.UpdateAsync(user);
             return Ok();
         }
@@ -227,7 +229,7 @@ namespace FREEFOODSERVER.Controllers
             var info = (CompanyInfo)user.UserInfo;
             
             if (bagId == null)
-                return Ok(info.Bags.ConvertAll(x => (BagCompnayCardViewModel)x));
+                return Ok(info.Bags.ConvertAll(x => (BagCompanyCardViewModel)x));
             else
             {
                 var bag = info.Bags.Find(x => x.Id == bagId);
@@ -293,31 +295,31 @@ namespace FREEFOODSERVER.Controllers
         /// </response>
         /// <response code="404">If the item is null</response>
         /// <response code="200"></response>
-        [HttpGet("Bag/Favorite")]
-        [Produces("application/json")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GETBagFavorite()
-        {
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var bag = ((CompanyInfo)user.UserInfo).Bags.FindAll(x => x.IsFavorite).FirstOrDefault();
-            if (bag == null) return NotFound("Bag no exist");
+        //[HttpGet("Bag/Favorite")]
+        //[Produces("application/json")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //public async Task<IActionResult> GETBagFavorite()
+        //{
+        //    var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        //    if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+        //    var user = await _userManager.FindByEmailAsync(email);
+        //    if (user == null) return NotFound("User no exist");
+        //    if (user.UserInfo == null) return NotFound("User no Init");
+        //    var bag = ((CompanyInfo)user.UserInfo).Bags.FindAll(x => x.IsFavorite).FirstOrDefault();
+        //    if (bag == null) return NotFound("Bag no exist");
 
-            return Ok(new BagCompnayCardViewModel()
-            {
-                Cost = bag.Cost,
-                Id = bag.Id,
-                Count = bag.Count,
-                Name = bag.Name,
-                PreviewImageId = bag.ImagesId?.FirstOrDefault(),
-                IsFavorite = bag.IsFavorite,
-            });
-        }
+        //    return Ok(new BagCompanyCardViewModel()
+        //    {
+        //        Cost = bag.Cost,
+        //        Id = bag.Id,
+        //        Count = bag.Count,
+        //        Name = bag.Name,
+        //        PreviewImageId = bag.ImagesId?.FirstOrDefault(),
+        //        IsFavorite = bag.IsFavorite,
+        //    });
+        //}
 
 
 
@@ -338,26 +340,26 @@ namespace FREEFOODSERVER.Controllers
         /// </response>
         /// <response code="404">If the item is null</response>
         /// <response code="200"></response>
-        [HttpPost("Bag/Favorite")]
-        [Produces("application/json")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> POSTBagSetFavorite([FromBody] BagSetFavoriteViewModel model)
-        {
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var bag = ((CompanyInfo)user.UserInfo).Bags.Find(x => x.Id == model.BagId);
-            if (bag == null) return NotFound("Bag no exist");
+        //[HttpPost("Bag/Favorite")]
+        //[Produces("application/json")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //public async Task<IActionResult> POSTBagSetFavorite([FromBody] BagSetFavoriteViewModel model)
+        //{
+        //    var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        //    if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+        //    var user = await _userManager.FindByEmailAsync(email);
+        //    if (user == null) return NotFound("User no exist");
+        //    if (user.UserInfo == null) return NotFound("User no Init");
+        //    var bag = ((CompanyInfo)user.UserInfo).Bags.Find(x => x.Id == model.BagId);
+        //    if (bag == null) return NotFound("Bag no exist");
 
-            bag.IsFavorite = model.IsFavorite;
-            await _userManager.UpdateAsync(user);
+        //    bag.IsFavorite = model.IsFavorite;
+        //    await _userManager.UpdateAsync(user);
 
-            return Ok();
-        }
+        //    return Ok();
+        //}
 
         /// <summary>
         /// Возвращает описание профиля компании.
@@ -395,7 +397,8 @@ namespace FREEFOODSERVER.Controllers
                 Discription = info.Discription,
                 ImagePreview = info.ImagePreview,
                 Email = user.Email,
-                PhoneNumber = user.PhoneNumber
+                PhoneNumber = user.PhoneNumber,
+                AvgEvaluation = info.AvgEvaluation
             }) ;
         }
 
@@ -454,6 +457,8 @@ namespace FREEFOODSERVER.Controllers
             if (model.Count != null) bag.Count = (uint)model.Count;
             if (model.Cost != null) bag.Cost = (double)model.Cost;
             if (model.ImagesId != null) bag.ImagesId = model.ImagesId;
+            if (model.Tags != null) bag.Tags = model.Tags;
+            if (model.IsDisabled != null) bag.IsDisabled = (bool)model.IsDisabled;
 
             await _userManager.UpdateAsync(user);
             return Ok((BagInfoViewModel)bag);

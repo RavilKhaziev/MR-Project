@@ -1,15 +1,18 @@
 ﻿using FREEFOODSERVER.Models.Users;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 
 namespace FREEFOODSERVER.Models
 {
     public class Bag
     {
+        public bool IsDisabled { get; set; } = true;
+
         [Key]
         public Guid Id { get; set; }
 
         [Required]
-        public User? Owner { get; set; } = null!;
+        public User? Company { get; set; } = null!;
 
         [Required]
         public string Name { get; set; } = null!;
@@ -26,6 +29,12 @@ namespace FREEFOODSERVER.Models
 
         public UInt64 NumberOfViews { get; set; }
 
-        public bool IsFavorite { get; set; }
+        public List<string> Tags { get; set; } = new();
+
+        public DateTime Created { get; set; } = DateTime.Now;
+
+        public List<UserFeedback> Feedback { get; set; } = new();
+
+        public float? AvgEvaluation { get; set; }
     }
 }

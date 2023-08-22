@@ -19,6 +19,8 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public double? Cost { get; set; }
 
-        public bool? IsFavorite { get; set; }
+        public List<string>? Tags { get; set; } 
+
+        public bool? IsDisabled { get; set; } 
     }
 }
