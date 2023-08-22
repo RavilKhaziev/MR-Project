@@ -1,30 +1,30 @@
 ﻿using System.Drawing;
 
-namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
+namespace FREEFOODSERVER.Models.ViewModel
 {
-    public class BagPageViewModel
+    public class PageInfoViewModel
     {
         public static readonly int PAGESIZE = 10;
 
         /// <summary>
         /// номер текущей страницы
         /// </summary>
-        public uint PageNumber { get; set; }
+        public int PageNumber { get; set; }
         /// <summary>
         /// кол-во объектов на странице
         /// </summary>
-        public uint PageSize { get; set; }
+        public int PageSize { get; set; } = PAGESIZE;
 
         /// <summary>
         /// всего объектов
         /// </summary>
-        public uint TotalItems { get; set; }
+        public int TotalItems { get; set; }
         /// <summary>
         /// всего страниц
         /// </summary>
-        public uint TotalPages  
+        public int TotalPages
         {
-            get { return (uint)Math.Ceiling((decimal)TotalItems / PageSize); }
+            get { return (int)Math.Ceiling((decimal)TotalItems / PageSize); }
         }
     }
 }

@@ -6,6 +6,8 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 {
     public class BagCreateViewModel
     {
+        public bool? IsDisabled { get; set; } = false;
+
         [Required]
         public string Name { get; set; } = null!;
 
@@ -22,16 +24,21 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
         [Required]
         public double Cost { get; set; } = 0;
 
-        public static implicit operator Bag(BagCreateViewModel model)
-        {
-            return new Bag()
-            {
-                Name = model.Name,
-                Description = model.Description,
-                ImagesId = model.ImagesId,
-                Count = model.Count,
-                Cost = model.Cost,
-            };
-        }
+        public List<string>? Tags { get; set;}
+
+        public DateTime? Created { get; set; }
+
+        //public static implicit operator Bag(BagCreateViewModel model)
+        //{
+        //    return new Bag()
+        //    {
+        //        Name = model.Name,
+        //        Description = model.Description,
+        //        ImagesId = model.ImagesId,
+        //        Count = model.Count,
+        //        Cost = model.Cost,
+        //        Tags = model.Tags ?? new()
+        //    };
+        //}
     }
 }

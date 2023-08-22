@@ -4,6 +4,6 @@
     {
         public string? Filter { get; set; }
         
-        public uint? Page { get; set; }
+        public int? Page { get; set; }
     }
 }

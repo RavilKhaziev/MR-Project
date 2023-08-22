@@ -3,8 +3,12 @@
     "Docker Compose": {
       "commandName": "DockerCompose",
       "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "webserver",
+      "composeLaunchUrl": "{Scheme}://localhost:{ServicePort}",
       "serviceActions": {
-        "webserver": "StartDebugging"
+        "webserver": "StartDebugging",
+        "postgres-server-db": "StartWithoutDebugging"
       }
     }
   }

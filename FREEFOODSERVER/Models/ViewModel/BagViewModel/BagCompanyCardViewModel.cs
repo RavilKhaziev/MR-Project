@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 {
-    public class BagCompnayCardViewModel
+    public class BagCompanyCardViewModel
     {
         public Guid Id { get; set; }
 
@@ -15,17 +15,22 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public double Cost { get; set; }
 
-        public bool IsFavorite { get; set; } 
+        public List<string>? Tags { get; set; }
 
-        public static implicit operator BagCompnayCardViewModel(Bag model) =>
+        public float? AvgEvaluation { get; set; }
+
+        public bool IsDisabled { get; set; }
+
+        public static implicit operator BagCompanyCardViewModel(Bag model) =>
             new() {
                 Name = model.Name,
                 Cost = model.Cost,
                 Count = model.Count,
                 Id = model.Id,
                 PreviewImageId = model.ImagesId?.FirstOrDefault(),
-                IsFavorite = model.IsFavorite,
-                
+                Tags = model.Tags,
+                AvgEvaluation = model.AvgEvaluation,
+                IsDisabled = model.IsDisabled,
             };
     }
 }

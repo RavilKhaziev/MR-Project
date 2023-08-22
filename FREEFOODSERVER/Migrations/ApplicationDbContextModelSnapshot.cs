@@ -29,6 +29,13 @@ namespace FREEFOODSERVER.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<float?>("AvgEvaluation")
+                        .HasColumnType("real");
+
+                    b.Property<string>("CompanyId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("CompanyInfoId")
                         .HasColumnType("uuid");
 
@@ -38,13 +45,16 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<long>("Count")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.Property<List<string>>("ImagesId")
                         .HasColumnType("text[]");
 
-                    b.Property<bool>("IsFavorite")
+                    b.Property<bool>("IsDisabled")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
@@ -54,17 +64,44 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<decimal>("NumberOfViews")
                         .HasColumnType("numeric(20,0)");
 
-                    b.Property<string>("OwnerId")
+                    b.Property<List<string>>("Tags")
                         .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CompanyInfoId");
+
+                    b.ToTable("Bags");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.UserFeedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Evaluation")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("FeedbackOwnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserOwnerId")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CompanyInfoId");
+                    b.HasIndex("FeedbackOwnerId");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("UserOwnerId");
 
-                    b.ToTable("Bags");
+                    b.ToTable("UserFeedbacks");
                 });
 
             modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
@@ -115,9 +152,6 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("UserInfoId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -130,8 +164,6 @@ namespace FREEFOODSERVER.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
-
-                    b.HasIndex("UserInfoId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -146,7 +178,13 @@ namespace FREEFOODSERVER.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("UserInfo");
 
@@ -301,6 +339,9 @@ namespace FREEFOODSERVER.Migrations
                 {
                     b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
 
+                    b.Property<float?>("AvgEvaluation")
+                        .HasColumnType("real");
+
                     b.Property<string>("CompanyName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -327,28 +368,41 @@ namespace FREEFOODSERVER.Migrations
 
             modelBuilder.Entity("FREEFOODSERVER.Models.Bag", b =>
                 {
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("FREEFOODSERVER.Models.Users.CompanyInfo", null)
                         .WithMany("Bags")
                         .HasForeignKey("CompanyInfoId");
 
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
+                    b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
+            modelBuilder.Entity("FREEFOODSERVER.Models.UserFeedback", b =>
                 {
-                    b.HasOne("FREEFOODSERVER.Models.Users.UserInfo", "UserInfo")
-                        .WithMany()
-                        .HasForeignKey("UserInfoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("FREEFOODSERVER.Models.Bag", "FeedbackOwner")
+                        .WithMany("Feedback")
+                        .HasForeignKey("FeedbackOwnerId");
 
-                    b.Navigation("UserInfo");
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", "UserOwner")
+                        .WithMany()
+                        .HasForeignKey("UserOwnerId");
+
+                    b.Navigation("FeedbackOwner");
+
+                    b.Navigation("UserOwner");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.UserInfo", b =>
+                {
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", "User")
+                        .WithOne("UserInfo")
+                        .HasForeignKey("FREEFOODSERVER.Models.Users.UserInfo", "UserId");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -399,6 +453,17 @@ namespace FREEFOODSERVER.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Bag", b =>
+                {
+                    b.Navigation("Feedback");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
+                {
+                    b.Navigation("UserInfo")
                         .IsRequired();
                 });
 
