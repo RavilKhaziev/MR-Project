@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230822160930_Iden")]
+    [Migration("20230825112816_Iden")]
     partial class Iden
     {
         /// <inheritdoc />
@@ -38,9 +38,6 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<string>("CompanyId")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("CompanyInfoId")
-                        .HasColumnType("uuid");
 
                     b.Property<double>("Cost")
                         .HasColumnType("double precision");
@@ -71,11 +68,14 @@ namespace FREEFOODSERVER.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
 
-                    b.HasIndex("CompanyInfoId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bags");
                 });
@@ -107,7 +107,58 @@ namespace FREEFOODSERVER.Migrations
                     b.ToTable("UserFeedbacks");
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex");
+
+                    b.ToTable("AspNetRoles", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClaimType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClaimValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("AspNetRoleClaims", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -117,6 +168,10 @@ namespace FREEFOODSERVER.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Email")
@@ -169,82 +224,10 @@ namespace FREEFOODSERVER.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.UserInfo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("UserInfo");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("UserInfo");
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
 
                     b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex");
-
-                    b.ToTable("AspNetRoles", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClaimType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ClaimValue")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -328,19 +311,19 @@ namespace FREEFOODSERVER.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.AdminInfo", b =>
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.Admin", b =>
                 {
-                    b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
                     b.Property<int>("BannedCount")
                         .HasColumnType("integer");
 
-                    b.HasDiscriminator().HasValue("AdminInfo");
+                    b.HasDiscriminator().HasValue("Admin");
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.CompanyInfo", b =>
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.Company", b =>
                 {
-                    b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
                     b.Property<float?>("AvgEvaluation")
                         .HasColumnType("real");
@@ -355,31 +338,31 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<string>("ImagePreview")
                         .HasColumnType("text");
 
-                    b.HasDiscriminator().HasValue("CompanyInfo");
+                    b.HasDiscriminator().HasValue("Company");
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.StandardUserInfo", b =>
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
                 {
-                    b.HasBaseType("FREEFOODSERVER.Models.Users.UserInfo");
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasDiscriminator().HasValue("StandardUserInfo");
+                    b.HasDiscriminator().HasValue("User");
                 });
 
             modelBuilder.Entity("FREEFOODSERVER.Models.Bag", b =>
                 {
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", "Company")
-                        .WithMany()
+                    b.HasOne("FREEFOODSERVER.Models.Users.Company", "Company")
+                        .WithMany("Bags")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FREEFOODSERVER.Models.Users.CompanyInfo", null)
-                        .WithMany("Bags")
-                        .HasForeignKey("CompanyInfoId");
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                        .WithMany("FavoriteBags")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Company");
                 });
@@ -399,15 +382,6 @@ namespace FREEFOODSERVER.Migrations
                     b.Navigation("UserOwner");
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.UserInfo", b =>
-                {
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", "User")
-                        .WithOne("UserInfo")
-                        .HasForeignKey("FREEFOODSERVER.Models.Users.UserInfo", "UserId");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -419,7 +393,7 @@ namespace FREEFOODSERVER.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -428,7 +402,7 @@ namespace FREEFOODSERVER.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -443,7 +417,7 @@ namespace FREEFOODSERVER.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -452,7 +426,7 @@ namespace FREEFOODSERVER.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -464,15 +438,14 @@ namespace FREEFOODSERVER.Migrations
                     b.Navigation("Feedback");
                 });
 
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
-                {
-                    b.Navigation("UserInfo")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("FREEFOODSERVER.Models.Users.CompanyInfo", b =>
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.Company", b =>
                 {
                     b.Navigation("Bags");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
+                {
+                    b.Navigation("FavoriteBags");
                 });
 #pragma warning restore 612, 618
         }

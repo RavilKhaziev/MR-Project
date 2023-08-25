@@ -12,7 +12,7 @@ namespace FREEFOODSERVER.Models
         public Guid Id { get; set; }
 
         [Required]
-        public User? Company { get; set; } = null!;
+        public Company? Company { get; set; } = null!;
 
         [Required]
         public string Name { get; set; } = null!;

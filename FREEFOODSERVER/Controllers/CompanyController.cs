@@ -7,8 +7,10 @@ using FREEFOODSERVER.Models.ViewModel.Company;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace FREEFOODSERVER.Controllers
@@ -18,13 +20,14 @@ namespace FREEFOODSERVER.Controllers
     [Authorize(Roles = UserRoles.Company)]
     public class CompanyController : Controller
     {
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly SignInManager<User> _signInManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ApplicationDbContext _db;
-        public CompanyController(UserManager<User> userManager,
+        public CompanyController(
+            UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<User> signInManager,
+            SignInManager<IdentityUser> signInManager,
             ApplicationDbContext db
             )
         {
@@ -64,17 +67,14 @@ namespace FREEFOODSERVER.Controllers
         {
             if (!ModelState.IsValid) return BadRequest();
 
-            User user = new User
+            Company user = new()
             {
                 Email = model.Email,
                 EmailConfirmed = true,
                 UserName = model.Email,
                 PhoneNumber = model.PhoneNumber,
-                UserInfo = new CompanyInfo(){ 
-                    CompanyName = model.Name,
-                    Bags = new()
-                },
-                
+                CompanyName = model.Name,
+                Bags = new(),
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -158,6 +158,8 @@ namespace FREEFOODSERVER.Controllers
         ///     string? Description - Описание бокса
         ///     uint Count - Кол-во боксов
         ///     double Cost - Цена бокса
+        ///     List<string>? Tags - Все тэги
+        ///     DateTime? Created - Время только UTC формат
         /// }
         /// </param>
         /// <response code="400">
@@ -176,10 +178,11 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+
+            // var user = (Company?)await _userManager.FindByEmailAsync(email);
+            var user = await _db.CompanyInfos.Include(x => x.Bags).Where(x => x.Email == email).FirstOrDefaultAsync();
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            ((CompanyInfo)user.UserInfo).Bags.Add(new()
+            user.Bags.Add(new()
             {
                 Cost = model.Cost,
                 Company = user,
@@ -191,8 +194,8 @@ namespace FREEFOODSERVER.Controllers
                 Tags = model.Tags ?? new(),
                 IsDisabled = model.IsDisabled ?? true,
                 Created = model.Created ?? DateTime.Now
-            }) ;
-            var result = await _userManager.UpdateAsync(user);
+            });
+            await _db.SaveChangesAsync();
             return Ok();
         }
 
@@ -223,16 +226,14 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var info = (CompanyInfo)user.UserInfo;
             
             if (bagId == null)
-                return Ok(info.Bags.ConvertAll(x => (BagCompanyCardViewModel)x));
+                return Ok(user.Bags.ConvertAll(x => (BagCompanyCardViewModel)x));
             else
             {
-                var bag = info.Bags.Find(x => x.Id == bagId);
+                var bag = user.Bags.Find(x => x.Id == bagId);
                 if (bag == null) return NotFound("Bag no find");
                 return Ok(new List<BagInfoViewModel>() { bag });
             }
@@ -259,12 +260,11 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var bag = ((CompanyInfo)user.UserInfo).Bags.Find(x => x.Id == bagId);
+            var bag = user.Bags.Find(x => x.Id == bagId);
             if (bag == null) return NotFound("Bag no exist");
-            if (((CompanyInfo)user.UserInfo).Bags.Remove(bag))
+            if (user.Bags.Remove(bag))
             {
                 await _userManager.UpdateAsync(user);
                 return Ok();
@@ -387,18 +387,16 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var info = ((CompanyInfo)user.UserInfo);
             return Ok(new CompanyProfileViewModel()
             {
-                CompanyName = info.CompanyName,
-                Discription = info.Discription,
-                ImagePreview = info.ImagePreview,
+                CompanyName = user.CompanyName,
+                Discription = user.Discription,
+                ImagePreview = user.ImagePreview,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
-                AvgEvaluation = info.AvgEvaluation
+                AvgEvaluation = user.AvgEvaluation
             }) ;
         }
 
@@ -416,18 +414,17 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var info = ((CompanyInfo)user.UserInfo);
-            if(!string.IsNullOrEmpty(model.ImagePreview)) info.ImagePreview = model.ImagePreview;
-            if(!string.IsNullOrEmpty(model.CompanyName)) info.CompanyName = model.CompanyName;
-            if(!string.IsNullOrEmpty(model.Discription)) info.Discription = model.Discription;
+            if(!string.IsNullOrEmpty(model.ImagePreview)) user.ImagePreview = model.ImagePreview;
+            if(!string.IsNullOrEmpty(model.CompanyName)) user.CompanyName = model.CompanyName;
+            if(!string.IsNullOrEmpty(model.Discription)) user.Discription = model.Discription;
+            await _userManager.UpdateAsync(user);
             return Ok(new CompanyProfileViewModel()
             {
-                CompanyName = info.CompanyName,
-                Discription = info.Discription,
-                ImagePreview = info.ImagePreview,
+                CompanyName = user.CompanyName,
+                Discription = user.Discription,
+                ImagePreview = user.ImagePreview,
                 PhoneNumber = user.PhoneNumber,
                 Email = user.Email,
             });
@@ -446,10 +443,9 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var bag = ((CompanyInfo)user.UserInfo).Bags.Find(x => x.Id == model.Id);
+            var bag = user.Bags.Find(x => x.Id == model.Id);
             if (bag == null) return NotFound("Bag not found");
 
             if (!string.IsNullOrEmpty(model.Description)) bag.Description = model.Description;

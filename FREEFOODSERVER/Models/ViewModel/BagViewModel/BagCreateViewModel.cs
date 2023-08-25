@@ -6,7 +6,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 {
     public class BagCreateViewModel
     {
-        public bool? IsDisabled { get; set; } = false;
+        public bool? IsDisabled { get; set; } = true;
 
         [Required]
         public string Name { get; set; } = null!;
