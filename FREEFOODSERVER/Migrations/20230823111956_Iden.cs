@@ -32,6 +32,13 @@ namespace FREEFOODSERVER.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
+                    Discriminator = table.Column<string>(type: "text", nullable: false),
+                    BannedCount = table.Column<int>(type: "integer", nullable: true),
+                    CompanyName = table.Column<string>(type: "text", nullable: true),
+                    Discription = table.Column<string>(type: "text", nullable: true),
+                    ImagePreview = table.Column<string>(type: "text", nullable: true),
+                    AvgEvaluation = table.Column<float>(type: "real", nullable: true),
+                    Name = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -159,30 +166,6 @@ namespace FREEFOODSERVER.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserInfo",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<string>(type: "text", nullable: true),
-                    Discriminator = table.Column<string>(type: "text", nullable: false),
-                    BannedCount = table.Column<int>(type: "integer", nullable: true),
-                    CompanyName = table.Column<string>(type: "text", nullable: true),
-                    Discription = table.Column<string>(type: "text", nullable: true),
-                    ImagePreview = table.Column<string>(type: "text", nullable: true),
-                    AvgEvaluation = table.Column<float>(type: "real", nullable: true),
-                    UserName = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserInfo", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserInfo_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Bags",
                 columns: table => new
                 {
@@ -197,8 +180,7 @@ namespace FREEFOODSERVER.Migrations
                     NumberOfViews = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Tags = table.Column<List<string>>(type: "text[]", nullable: false),
                     Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    AvgEvaluation = table.Column<float>(type: "real", nullable: true),
-                    CompanyInfoId = table.Column<Guid>(type: "uuid", nullable: true)
+                    AvgEvaluation = table.Column<float>(type: "real", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -209,11 +191,6 @@ namespace FREEFOODSERVER.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Bags_UserInfo_CompanyInfoId",
-                        column: x => x.CompanyInfoId,
-                        principalTable: "UserInfo",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -284,11 +261,6 @@ namespace FREEFOODSERVER.Migrations
                 column: "CompanyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bags_CompanyInfoId",
-                table: "Bags",
-                column: "CompanyInfoId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserFeedbacks_FeedbackOwnerId",
                 table: "UserFeedbacks",
                 column: "FeedbackOwnerId");
@@ -297,12 +269,6 @@ namespace FREEFOODSERVER.Migrations
                 name: "IX_UserFeedbacks_UserOwnerId",
                 table: "UserFeedbacks",
                 column: "UserOwnerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserInfo_UserId",
-                table: "UserInfo",
-                column: "UserId",
-                unique: true);
         }
 
         /// <inheritdoc />
@@ -331,9 +297,6 @@ namespace FREEFOODSERVER.Migrations
 
             migrationBuilder.DropTable(
                 name: "Bags");
-
-            migrationBuilder.DropTable(
-                name: "UserInfo");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

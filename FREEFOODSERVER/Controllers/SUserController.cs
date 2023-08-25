@@ -23,9 +23,9 @@ namespace FREEFOODSERVER.Controllers
 
     public class SUserController : Controller
     {
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly SignInManager<User> _signInManager;
+        private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ILogger<SUserController> _logger;
         private readonly ApplicationDbContext _db;
         private Dictionary<string, Func<IQueryable<Bag>, IQueryable<Bag>>> _filter = new()
@@ -42,9 +42,10 @@ namespace FREEFOODSERVER.Controllers
             "vegetarian",
         };
  
-        public SUserController(UserManager<User> userManager,
+        public SUserController(
+            UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<User> signInManager,
+            SignInManager<IdentityUser> signInManager,
             ILogger<SUserController> logger,
             ApplicationDbContext db
             )
@@ -71,9 +72,7 @@ namespace FREEFOODSERVER.Controllers
                 Email = model.Email,
                 UserName = model.Email,
                 EmailConfirmed = true,
-                UserInfo = new StandardUserInfo() {
-                    UserName = model.Name
-                }
+                Name = model.Name,
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -128,11 +127,13 @@ namespace FREEFOODSERVER.Controllers
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email))
                 return BadRequest("Такого пользователя не существует");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var info = (StandardUserInfo)user.UserInfo;
-            return Ok(new UserProfileViewModel() { PhoneNumber = user.PhoneNumber, Email = user.Email, Name = info.UserName });
+            return Ok(new UserProfileViewModel() { 
+                PhoneNumber = user.PhoneNumber,
+                Email = user.Email,
+                Name = user.Name 
+            });
         }
         
         /// <summary>
@@ -158,11 +159,9 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (user.UserInfo == null) return NotFound("User no Init");
-            var info = ((StandardUserInfo)user.UserInfo);
-            if (!string.IsNullOrEmpty(model.UserName)) info.UserName = model.UserName;
+            if (!string.IsNullOrEmpty(model.UserName)) user.UserName = model.UserName;
             return Ok(new UserProfileViewModel()
             {
                Name = model.UserName,
@@ -184,10 +183,16 @@ namespace FREEFOODSERVER.Controllers
                 CompanyName = x.CompanyName,
                 AvgEvaluation = x.AvgEvaluation,
                 ImagePreview = x.ImagePreview,
-                Id = x.UserId,
+                Id = x.Id,
             }));
         }
 
+        //[HttpPost("Company/GetBag")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //public async Task<IActionResult> GETBagInformation([FromBody] Guid companyId)
+        //{
+            
+        //}
 
         /// <summary>
         /// Все известные тэги для сервера
@@ -200,18 +205,19 @@ namespace FREEFOODSERVER.Controllers
             return Ok(_tags);
         }
         /// <summary>
-        /// Позволяет получить Боксы с применением фильтров и пагинацией.
+        /// (В работе)Позволяет получить Боксы с применением фильтров и пагинацией. 
         /// </summary>
         /// <param name="model">
         ///     Отсчёт страниц начинаеться с 0.
         ///     Фильтры доступны по ...
         /// </param>
         /// <returns></returns>
+        //TODO Функция перегружена необходимо разгрузить
         [HttpPost("Bag")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> POSTBags([FromBody]IndexPageViewModel model)
         {
-            List<Bag> result;
+            List<BagUserCardViewModel> result = new();
             var pageInfo = new PageInfoViewModel();
             if (string.IsNullOrEmpty(model.Filter))
             {
@@ -228,46 +234,128 @@ namespace FREEFOODSERVER.Controllers
                 }
                 if (model.Page == null) model.Page = 0;
                 
-                result = _db.Bags.AsNoTracking().Include(x => x.Company)
+
+
+                var bags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Company)
                     .Where(x => !x.IsDisabled).AsEnumerable()
                     .Take(new Range(
                         Math.Clamp((int)model.Page * PageInfoViewModel.PAGESIZE, 0, count),
                         Math.Clamp((int)(model.Page + 1) * PageInfoViewModel.PAGESIZE, 0, count))
                     ).ToList();
-                pageInfo.TotalItems = result.Count;
+                if (bags == null) bags = new();
+
+                foreach (var item in bags)
+                {
+                    BagUserCardViewModel? company = null;
+                    if ((company = result.Find(x => x.Company.Id == item.Company.Id)) != null){
+                        company.Bags.Add(new BagUserCardViewModel.Bag()
+                        {
+                            AvgEvaluation = item.AvgEvaluation,
+                            Cost = item.Cost,
+                            Count = item.Count,
+                            Id = item.Id, 
+                            Name = item.Name,
+                            PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                            Tags = item.Tags
+                        });
+                    }
+                    else
+                    {
+                        result.Add(new BagUserCardViewModel()
+                        {
+                            Company = new CompanyPreviewViewModel()
+                            {
+                                Id = item.Company.Id,
+                                CompanyName = item.Company.CompanyName,
+                                ImagePreview = item.Company.ImagePreview
+                            },
+                            Bags = new()
+                            {
+                                new BagUserCardViewModel.Bag()
+                                {
+                                    Id = item.Id,
+                                    AvgEvaluation = item.AvgEvaluation, 
+                                    Cost = item.Cost,
+                                    Count = item.Count,
+                                    Name = item.Name,
+                                    PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                                    Tags = item.Tags
+                                }
+                            }
+                            
+                        });
+                    }
+                }
+
+                pageInfo.TotalItems = bags.Count;
             }
             else
             {
                 var filters = model.Filter.Split();
-                var bags = _db.Bags.AsNoTracking().Include(x => x.Company)
+                var filteredBags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Company)
                     .Where(x => !x.IsDisabled);
                 foreach ( var filter in filters) 
                 {
-                    bags.Where(x => x.Tags.Contains(filter));
+                    filteredBags = filteredBags.Where(x => x.Tags.Contains(filter));
                 }
-                pageInfo.TotalItems = bags.Count();
-                result = await bags.Take(PageInfoViewModel.PAGESIZE).ToListAsync();
+                var count = filteredBags.Count();
+                pageInfo.TotalItems = count;
+
+                var bags = filteredBags.AsEnumerable()
+                    .Take(new Range(
+                        Math.Clamp((int)model.Page * PageInfoViewModel.PAGESIZE, 0, count),
+                        Math.Clamp((int)(model.Page + 1) * PageInfoViewModel.PAGESIZE, 0, count)));
+
+                foreach (var item in bags)
+                {
+                    BagUserCardViewModel? company = null;
+                    if ((company = result.Find(x => x.Company.Id == item.Company.Id)) != null)
+                    {
+                        company.Bags.Add(new BagUserCardViewModel.Bag()
+                        {
+                            AvgEvaluation = item.AvgEvaluation,
+                            Cost = item.Cost,
+                            Count = item.Count,
+                            Id = item.Id,
+                            Name = item.Name,
+                            PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                            Tags = item.Tags
+                        });
+                    }
+                    else
+                    {
+                        result.Add(new BagUserCardViewModel()
+                        {
+                            Company = new CompanyPreviewViewModel()
+                            {
+                                Id = item.Company.Id,
+                                CompanyName = item.Company.CompanyName,
+                                ImagePreview = item.Company.ImagePreview
+                            },
+                            Bags = new()
+                            {
+                                new BagUserCardViewModel.Bag()
+                                {
+                                    Id = item.Id,
+                                    AvgEvaluation = item.AvgEvaluation,
+                                    Cost = item.Cost,
+                                    Count = item.Count,
+                                    Name = item.Name,
+                                    PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                                    Tags = item.Tags
+                                }
+                            }
+
+                        });
+                    }
+                }
             }
 
+            // TO DO Компания = [BAGS]
             return Ok(new OutIndexPageViewModel<BagUserCardViewModel>() 
             {
                 PageInfo = pageInfo,
-                Items = result.ConvertAll(x => {
-                    var userInfo = (CompanyInfo)x.Company.UserInfo;
-                    return new BagUserCardViewModel()
-                    {
-                        Company = new CompanyPreviewViewModel() { CompanyName = userInfo.CompanyName, Id = userInfo.Id, ImagePreview = userInfo.ImagePreview },
-                        bagInfo = new() {
-                            Cost = x.Cost,
-                            Count = x.Count,
-                            Id = x.Id,
-                            Name = x.Name,
-                            PreviewImageId = x.ImagesId?.FirstOrDefault(),
-                            Tags = x.Tags,
-                            AvgEvaluation = x.AvgEvaluation
-                        }
-                    };
-                }),
+                Items = result
             });
 
         }
@@ -283,30 +371,42 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = await _userManager.FindByEmailAsync(email);
+            var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
 
             Bag? bag ;
-            if ((bag = await _db.Bags.Include(x => x.Company).ThenInclude(x => x.UserInfo).FirstOrDefaultAsync(x => x.Id == model.BagId)) == null) 
+            if ((bag = await _db.Bags.Include(x => x.Feedback).Include(x => x.Company).FirstOrDefaultAsync(x => x.Id == model.BagId)) == null) 
                 return NotFound("Bag no Exist");
-            if (bag.Company == null) return BadRequest("Server Error");
-            var company = (CompanyInfo)bag.Company.UserInfo;
-            if (company == null) return BadRequest("Server Error");
+            if (bag == null) return BadRequest("Server Error");
             if (bag.IsDisabled) return NotFound("Bag no Exist");
+            if (bag.Company == null) return BadRequest("Server Error");
+            var company = (Company?)bag.Company;
+            if (company == null) return BadRequest("Server Error");
 
+            var feedback = bag.Feedback.Find(x => x.UserOwner.Id == user.Id);
 
-            bag.Feedback.Add(new()
+            if (feedback == null)
             {
-                Evaluation = model.Evaluation,
-                Time = model.Created,
-                UserOwner = user,
-                FeedbackOwner = bag
-            });
+                bag.Feedback.Add(new()
+                {
+                    Evaluation = model.Evaluation,
+                    Time = model.Created,
+                    UserOwner = user,
+                    FeedbackOwner = bag
+                });
+            }
+            else
+            {
+                feedback.Evaluation = model.Evaluation;
+            }
+
             bag.AvgEvaluation = (float)bag.Feedback.Sum(x => x.Evaluation) / bag.Feedback.Count;
             company.AvgEvaluation = (float)company.Bags.Sum(x => (float)x.AvgEvaluation) / (float)company.Bags.Count;
             await _userManager.UpdateAsync(bag.Company);
             return Ok();
         }
+
+
 
     }
 }

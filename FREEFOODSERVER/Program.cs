@@ -31,7 +31,7 @@ namespace FREEFOODSERVER
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
-            builder.Services.AddIdentity<User, IdentityRole>(options => {
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => {
                 options.SignIn.RequireConfirmedAccount = false;
                 options.User.RequireUniqueEmail = true;
                 
@@ -108,7 +108,7 @@ namespace FREEFOODSERVER
                 var services = scope.ServiceProvider;
                 var logger = services.GetRequiredService<ILogger<Program>>();
                 var db = services.GetRequiredService<ApplicationDbContext>();
-                var userManager = services.GetRequiredService<UserManager<User>>();
+                var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
                 var rolesManager = services.GetRequiredService<RoleManager<IdentityRole>>();
                 int count = 0;
                 while (!db.Database.CanConnect())

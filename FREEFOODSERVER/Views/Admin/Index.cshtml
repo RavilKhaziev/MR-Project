@@ -2,8 +2,8 @@
 @using Microsoft.AspNetCore.Identity
 @using FREEFOODSERVER.Models.ViewModel.Admin
 
-@inject SignInManager<User> SignInManager
-@inject UserManager<User> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
 @inject RoleManager<IdentityRole> RoleManager
 @model List<UserViewModel>
 @{
