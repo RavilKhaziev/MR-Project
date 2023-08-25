@@ -180,7 +180,8 @@ namespace FREEFOODSERVER.Migrations
                     NumberOfViews = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     Tags = table.Column<List<string>>(type: "text[]", nullable: false),
                     Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    AvgEvaluation = table.Column<float>(type: "real", nullable: true)
+                    AvgEvaluation = table.Column<float>(type: "real", nullable: true),
+                    UserId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -191,6 +192,11 @@ namespace FREEFOODSERVER.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Bags_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -259,6 +265,11 @@ namespace FREEFOODSERVER.Migrations
                 name: "IX_Bags_CompanyId",
                 table: "Bags",
                 column: "CompanyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bags_UserId",
+                table: "Bags",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserFeedbacks_FeedbackOwnerId",

@@ -7,6 +7,7 @@ using FREEFOODSERVER.Models.ViewModel.Company;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -157,6 +158,8 @@ namespace FREEFOODSERVER.Controllers
         ///     string? Description - Описание бокса
         ///     uint Count - Кол-во боксов
         ///     double Cost - Цена бокса
+        ///     List<string>? Tags - Все тэги
+        ///     DateTime? Created - Время только UTC формат
         /// }
         /// </param>
         /// <response code="400">
@@ -175,7 +178,9 @@ namespace FREEFOODSERVER.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = (Company?)await _userManager.FindByEmailAsync(email);
+
+            // var user = (Company?)await _userManager.FindByEmailAsync(email);
+            var user = await _db.CompanyInfos.Include(x => x.Bags).Where(x => x.Email == email).FirstOrDefaultAsync();
             if (user == null) return NotFound("User no exist");
             user.Bags.Add(new()
             {
@@ -190,7 +195,7 @@ namespace FREEFOODSERVER.Controllers
                 IsDisabled = model.IsDisabled ?? true,
                 Created = model.Created ?? DateTime.Now
             });
-            var result = await _userManager.UpdateAsync(user);
+            await _db.SaveChangesAsync();
             return Ok();
         }
 

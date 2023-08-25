@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyModel.Resolution;
+using Microsoft.IdentityModel.Tokens;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
@@ -406,7 +408,134 @@ namespace FREEFOODSERVER.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Установка избранного 
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPut("Bag/Favorites")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> PUTFavorite([FromBody]Guid bagId)
+        {
+            var bag = await _db.Bags.FindAsync(bagId);
+            if (bag == null) return NotFound("Bag not exist");
 
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = (User?)await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound("User no exist");
+
+
+            if (user.FavoriteBags.Contains(bag))
+                return BadRequest("Bag is in Favorites");
+
+            user.FavoriteBags.Add(bag);
+
+            await _userManager.UpdateAsync(user);
+
+            return Ok("Bag add to Favorites");
+        }
+
+        /// <summary>
+        /// Получение избранного 
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpGet("Bag/Favorites")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GETFavorite()
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = (User?)await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound("User no exist");
+
+
+            Bag?[] tmp = Array.Empty<Bag>();
+            user.FavoriteBags.CopyTo(tmp);
+            List<BagUserCardViewModel> result = new();
+            var bags = _db.Bags.IgnoreAutoIncludes().AsNoTracking()
+                .Include(x => x.Company)
+                .Where(x =>user.FavoriteBags.Contains(x))
+                .ToList();    
+
+
+            foreach (var item in bags)
+            {
+                BagUserCardViewModel? company = null;
+                if ((company = result.Find(x => x.Company.Id == item.Company.Id)) != null)
+                {
+                    company.Bags.Add(new BagUserCardViewModel.Bag()
+                    {
+                        AvgEvaluation = item.AvgEvaluation,
+                        Cost = item.Cost,
+                        Count = item.Count,
+                        Id = item.Id,
+                        Name = item.Name,
+                        PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                        Tags = item.Tags
+                    });
+                }
+                else
+                {
+                    result.Add(new BagUserCardViewModel()
+                    {
+                        Company = new CompanyPreviewViewModel()
+                        {
+                            Id = item.Company.Id,
+                            CompanyName = item.Company.CompanyName,
+                            ImagePreview = item.Company.ImagePreview
+                        },
+                        Bags = new()
+                            {
+                                new BagUserCardViewModel.Bag()
+                                {
+                                    Id = item.Id,
+                                    AvgEvaluation = item.AvgEvaluation,
+                                    Cost = item.Cost,
+                                    Count = item.Count,
+                                    Name = item.Name,
+                                    PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                                    Tags = item.Tags
+                                }
+                            }
+
+                    });
+                }
+            }
+
+            return Ok(result);
+
+        }
+
+        /// <summary>
+        /// Удаление из избранного 
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpDelete("Bag/Favorites")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DELETEFavorite([FromBody]Guid guid)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = (User?)await _userManager.FindByEmailAsync(email);
+            if (user == null) return NotFound("User no exist");
+
+            var bag = user.FavoriteBags.Find(x => x.Id == guid);
+            if (bag == null) return NotFound("Bag does not exist");
+
+            if (!user.FavoriteBags.Remove(bag)) return BadRequest("Server Err");
+
+            await _userManager.UpdateAsync(user);
+            return Ok("Favorites was deleted");
+        }
 
     }
 }

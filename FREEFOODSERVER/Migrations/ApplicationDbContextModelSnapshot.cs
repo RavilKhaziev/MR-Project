@@ -65,9 +65,14 @@ namespace FREEFOODSERVER.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bags");
                 });
@@ -352,6 +357,10 @@ namespace FREEFOODSERVER.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                        .WithMany("FavoriteBags")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Company");
                 });
 
@@ -429,6 +438,11 @@ namespace FREEFOODSERVER.Migrations
             modelBuilder.Entity("FREEFOODSERVER.Models.Users.Company", b =>
                 {
                     b.Navigation("Bags");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
+                {
+                    b.Navigation("FavoriteBags");
                 });
 #pragma warning restore 612, 618
         }

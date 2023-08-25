@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230823111956_Iden")]
+    [Migration("20230825112816_Iden")]
     partial class Iden
     {
         /// <inheritdoc />
@@ -68,9 +68,14 @@ namespace FREEFOODSERVER.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bags");
                 });
@@ -355,6 +360,10 @@ namespace FREEFOODSERVER.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("FREEFOODSERVER.Models.Users.User", null)
+                        .WithMany("FavoriteBags")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Company");
                 });
 
@@ -432,6 +441,11 @@ namespace FREEFOODSERVER.Migrations
             modelBuilder.Entity("FREEFOODSERVER.Models.Users.Company", b =>
                 {
                     b.Navigation("Bags");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Users.User", b =>
+                {
+                    b.Navigation("FavoriteBags");
                 });
 #pragma warning restore 612, 618
         }

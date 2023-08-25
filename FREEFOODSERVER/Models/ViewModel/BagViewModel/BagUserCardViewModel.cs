@@ -23,6 +23,6 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
             public float? AvgEvaluation { get; set; } = null;
         }
 
-        public List<BagUserCardViewModel.Bag> Bags { get; set; }
+        public List<BagUserCardViewModel.Bag?> Bags { get; set; }
     }
 }

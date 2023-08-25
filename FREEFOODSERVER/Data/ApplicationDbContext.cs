@@ -32,6 +32,8 @@ namespace FREEFOODSERVER.Data
         {
             base.OnModelCreating(builder);
             builder.Entity<Company>().Navigation(e => e.Bags).AutoInclude();
+            builder.Entity<User>().Navigation(e => e.FavoriteBags).AutoInclude();
+
         }
     }
 }
