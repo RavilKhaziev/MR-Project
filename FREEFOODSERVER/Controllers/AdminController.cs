@@ -15,12 +15,12 @@ namespace FREEFOODSERVER.Controllers
     public class AdminController : Controller
     {
         private readonly ILogger<AdminController> _logger;
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly SignInManager<User> _signInManager;
-        public AdminController(UserManager<User> userManager,
+        private readonly SignInManager<IdentityUser> _signInManager;
+        public AdminController(UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            SignInManager<User> signInManager,
+            SignInManager<IdentityUser> signInManager,
             ILogger<AdminController> logger)
         {
             _logger = logger;

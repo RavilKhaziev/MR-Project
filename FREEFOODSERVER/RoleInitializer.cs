@@ -7,7 +7,7 @@ namespace FREEFOODSERVER
 {
     public class RoleInitializer
     {
-        public static async Task<IdentityResult> InitializeAsync(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
+        public static async Task<IdentityResult> InitializeAsync(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             string adminEmail = "admin@example.com";
             string adminPassword = "_Aa123456";
@@ -29,8 +29,7 @@ namespace FREEFOODSERVER
             }
             if (await userManager.FindByNameAsync(adminEmail) == null)
             {
-                User admin = new() { Email = adminEmail, UserName = adminEmail, EmailConfirmed = true };
-                admin.UserInfo = new AdminInfo() {BannedCount = 10};
+                Admin admin = new() { Email = adminEmail, UserName = adminEmail, EmailConfirmed = true };
                 IdentityResult result = await userManager.CreateAsync(admin, adminPassword);
                 if (result.Succeeded)
                 {
@@ -39,8 +38,7 @@ namespace FREEFOODSERVER
             }
             if (await userManager.FindByNameAsync(userEmail) == null)
             {
-                User user = new(){ Email = userEmail, UserName = "Coolname", EmailConfirmed = true };
-                user.UserInfo = new StandardUserInfo() { UserName = "Cool name" };
+                User user = new(){ Email = userEmail, UserName = "Coolname", EmailConfirmed = true, Name = "Cool name" };
                 IdentityResult result = await userManager.CreateAsync(user, userPassword);
                 if (result.Succeeded)
                 {
@@ -49,8 +47,7 @@ namespace FREEFOODSERVER
             }
             if (await userManager.FindByNameAsync(companyEmail) == null)
             {
-                User company = new User { Email = companyEmail, UserName = "SoulGood", EmailConfirmed = true };
-                company.UserInfo = new CompanyInfo() { Bags = new List<Bag>(), CompanyName = "Soul Good"};
+                Company company = new Company { Email = companyEmail, UserName = "SoulGood", EmailConfirmed = true, Bags = new List<Bag>(), CompanyName = "Soul Good" };
                 IdentityResult result = await userManager.CreateAsync(company, companyPassword);
                 if (result.Succeeded)
                 {
