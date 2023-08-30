@@ -6,16 +6,14 @@ using FREEFOODSERVER.Models.ViewModel.BagViewModel;
 using FREEFOODSERVER.Models.ViewModel.Company;
 using FREEFOODSERVER.Models.ViewModel.Feedback;
 using FREEFOODSERVER.Models.ViewModel.NSUser;
+using FREEFOODSERVER.Models.ViewModel.Product;
 using FREEFOODSERVER.Models.ViewModel.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyModel.Resolution;
-using Microsoft.IdentityModel.Tokens;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
+
 
 namespace FREEFOODSERVER.Controllers
 {
@@ -35,15 +33,10 @@ namespace FREEFOODSERVER.Controllers
             { "popular", (x) =>  {return x.OrderBy(p => p.NumberOfViews); } }
         };
 
-        private string[] _tags = new[] 
-        {
-            "breakfast",
-            "lunch",
-            "dinner",
-            "vegan",
-            "vegetarian",
-        };
- 
+        private static List<string> _filters { get; set; } = Bag.BagTags.Union(Product.Category).ToList();
+
+      
+
         public SUserController(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
@@ -123,6 +116,10 @@ namespace FREEFOODSERVER.Controllers
             return BadRequest(Microsoft.AspNetCore.Identity.SignInResult.Failed);
         }
 
+        /// <summary>
+        /// Получение профиля пользователя
+        /// </summary>
+        /// <returns></returns>
         [HttpGet("Profile")]
         public async Task<IActionResult> GETProfile()
         {
@@ -131,13 +128,14 @@ namespace FREEFOODSERVER.Controllers
                 return BadRequest("Такого пользователя не существует");
             var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            return Ok(new UserProfileViewModel() { 
+            return Ok(new UserProfileViewModel()
+            {
                 PhoneNumber = user.PhoneNumber,
                 Email = user.Email,
-                Name = user.Name 
+                Name = user.Name
             });
         }
-        
+
         /// <summary>
         /// Вход
         /// </summary>
@@ -166,14 +164,14 @@ namespace FREEFOODSERVER.Controllers
             if (!string.IsNullOrEmpty(model.UserName)) user.UserName = model.UserName;
             return Ok(new UserProfileViewModel()
             {
-               Name = model.UserName,
-               PhoneNumber = user.PhoneNumber,
-               Email = user.Email,
+                Name = model.UserName,
+                PhoneNumber = user.PhoneNumber,
+                Email = user.Email,
             });
         }
 
         /// <summary>
-        /// Получение всех компаний в порядке возрастания рейтинга
+        /// Получение всех компаний
         /// </summary>
         [HttpGet("Company")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -189,12 +187,48 @@ namespace FREEFOODSERVER.Controllers
             }));
         }
 
-        //[HttpPost("Company/GetBag")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //public async Task<IActionResult> GETBagInformation([FromBody] Guid companyId)
-        //{
-            
-        //}
+        /// <summary>
+        /// Получение информации о компании
+        /// </summary>
+        /// <param name="companyId"></param>
+        /// <returns></returns>
+        [HttpPost("Company/Profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> POSTCompanyProfile([FromBody] Guid companyId)
+        {
+            var company = await _db.CompanyInfos.FindAsync(companyId.ToString());
+            if (company == null) return NotFound("Company not exist");
+
+            PageInfoViewModel page = new();
+            BagUserCardViewModel profile = new BagUserCardViewModel()
+            {
+                Company = new()
+                {
+                    CompanyName = company.CompanyName,
+                    Id = company.Id,
+                    ImagePreview = company.ImagePreview,
+                },
+                Bags =
+                    company.Bags.ConvertAll(
+                        x => (BagUserCardViewModel.Bag?)new()
+                        {
+                            AvgEvaluation = x.AvgEvaluation,
+                            Cost = x.Cost,
+                            Count = x.Count,
+                            Id = x.Id,
+                            Name = x.Name,
+                            PreviewImageId = x.ImagesId?.FirstOrDefault(),
+                            Tags = x.Tags,
+                            Products = x.Products.ConvertAll(x => (ProductViewModel)x)
+                        })
+            };
+
+            return Ok(new OutIndexPageViewModel<BagUserCardViewModel>()
+            {
+                PageInfo = page,
+                Items = new() { profile }
+            });
+        }
 
         /// <summary>
         /// Все известные тэги для сервера
@@ -204,7 +238,7 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GETBagsTags()
         {
-            return Ok(_tags);
+            return Ok(Bag.BagTags);
         }
         /// <summary>
         /// (В работе)Позволяет получить Боксы с применением фильтров и пагинацией. 
@@ -214,14 +248,16 @@ namespace FREEFOODSERVER.Controllers
         ///     Фильтры доступны по ...
         /// </param>
         /// <returns></returns>
-        //TODO Функция перегружена необходимо разгрузить
         [HttpPost("Bag")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> POSTBags([FromBody]IndexPageViewModel model)
+        public async Task<IActionResult> POSTBags([FromBody] IndexPageViewModel model)
         {
+            // TO DO
             List<BagUserCardViewModel> result = new();
+            var filters = _filters.Intersect(model.Filter.Split()).ToList();
             var pageInfo = new PageInfoViewModel();
-            if (string.IsNullOrEmpty(model.Filter))
+            List<Models.Bag>? bags = new List<Models.Bag>();
+            if (string.IsNullOrEmpty(model.Filter) || filters.Count <= 0)
             {
                 var count = _db.Bags.Count();
                 if (model.Page * PageInfoViewModel.PAGESIZE > count)
@@ -234,11 +270,8 @@ namespace FREEFOODSERVER.Controllers
                         Items = new()
                     });
                 }
-                if (model.Page == null) model.Page = 0;
-                
 
-
-                var bags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Company)
+                bags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Company).Include(x => x.Products)
                     .Where(x => !x.IsDisabled).AsEnumerable()
                     .Take(new Range(
                         Math.Clamp((int)model.Page * PageInfoViewModel.PAGESIZE, 0, count),
@@ -246,95 +279,53 @@ namespace FREEFOODSERVER.Controllers
                     ).ToList();
                 if (bags == null) bags = new();
 
-                foreach (var item in bags)
-                {
-                    BagUserCardViewModel? company = null;
-                    if ((company = result.Find(x => x.Company.Id == item.Company.Id)) != null){
-                        company.Bags.Add(new BagUserCardViewModel.Bag()
-                        {
-                            AvgEvaluation = item.AvgEvaluation,
-                            Cost = item.Cost,
-                            Count = item.Count,
-                            Id = item.Id, 
-                            Name = item.Name,
-                            PreviewImageId = item?.ImagesId?.FirstOrDefault(),
-                            Tags = item.Tags
-                        });
-                    }
-                    else
-                    {
-                        result.Add(new BagUserCardViewModel()
-                        {
-                            Company = new CompanyPreviewViewModel()
-                            {
-                                Id = item.Company.Id,
-                                CompanyName = item.Company.CompanyName,
-                                ImagePreview = item.Company.ImagePreview
-                            },
-                            Bags = new()
-                            {
-                                new BagUserCardViewModel.Bag()
-                                {
-                                    Id = item.Id,
-                                    AvgEvaluation = item.AvgEvaluation, 
-                                    Cost = item.Cost,
-                                    Count = item.Count,
-                                    Name = item.Name,
-                                    PreviewImageId = item?.ImagesId?.FirstOrDefault(),
-                                    Tags = item.Tags
-                                }
-                            }
-                            
-                        });
-                    }
-                }
-
                 pageInfo.TotalItems = bags.Count;
             }
             else
             {
-                var filters = model.Filter.Split();
-                var filteredBags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Company)
-                    .Where(x => !x.IsDisabled);
-                foreach ( var filter in filters) 
-                {
-                    filteredBags = filteredBags.Where(x => x.Tags.Contains(filter));
-                }
-                var count = filteredBags.Count();
-                pageInfo.TotalItems = count;
 
-                var bags = filteredBags.AsEnumerable()
+                var tagedBags = _db.Bags.AsNoTracking().IgnoreAutoIncludes().Include(x => x.Products).Include(x => x.Company)
+                    .Where(x => !x.IsDisabled);
+                foreach ( var filter in filters)
+                {
+                    tagedBags = tagedBags.Where(x => x.Filters.Contains(filter));
+                }
+                var count = await tagedBags.CountAsync();
+                bags = tagedBags.AsEnumerable()
                     .Take(new Range(
                         Math.Clamp((int)model.Page * PageInfoViewModel.PAGESIZE, 0, count),
-                        Math.Clamp((int)(model.Page + 1) * PageInfoViewModel.PAGESIZE, 0, count)));
+                        Math.Clamp((int)(model.Page + 1) * PageInfoViewModel.PAGESIZE, 0, count))).ToList();
+                pageInfo.TotalItems = bags.Count;
+            }
 
-                foreach (var item in bags)
+            foreach (var item in bags)
+            {
+                BagUserCardViewModel? company = null;
+                if ((company = result.Find(x => x.Company.Id == item.Company.Id)) != null)
                 {
-                    BagUserCardViewModel? company = null;
-                    if ((company = result.Find(x => x.Company.Id == item.Company.Id)) != null)
+                    company.Bags.Add(new BagUserCardViewModel.Bag()
                     {
-                        company.Bags.Add(new BagUserCardViewModel.Bag()
-                        {
-                            AvgEvaluation = item.AvgEvaluation,
-                            Cost = item.Cost,
-                            Count = item.Count,
-                            Id = item.Id,
-                            Name = item.Name,
-                            PreviewImageId = item?.ImagesId?.FirstOrDefault(),
-                            Tags = item.Tags
-                        });
-                    }
-                    else
+                        AvgEvaluation = item.AvgEvaluation,
+                        Cost = item.Cost,
+                        Count = item.Count,
+                        Id = item.Id,
+                        Name = item.Name,
+                        PreviewImageId = item?.ImagesId?.FirstOrDefault(),
+                        Tags = item.Tags,
+                        Products = item.Products.ConvertAll(x => (ProductViewModel)x),
+                    });
+                }
+                else
+                {
+                    result.Add(new BagUserCardViewModel()
                     {
-                        result.Add(new BagUserCardViewModel()
+                        Company = new CompanyPreviewViewModel()
                         {
-                            Company = new CompanyPreviewViewModel()
-                            {
-                                Id = item.Company.Id,
-                                CompanyName = item.Company.CompanyName,
-                                ImagePreview = item.Company.ImagePreview
-                            },
-                            Bags = new()
+                            Id = item.Company.Id,
+                            CompanyName = item.Company.CompanyName,
+                            ImagePreview = item.Company.ImagePreview
+                        },
+                        Bags = new()
                             {
                                 new BagUserCardViewModel.Bag()
                                 {
@@ -344,17 +335,17 @@ namespace FREEFOODSERVER.Controllers
                                     Count = item.Count,
                                     Name = item.Name,
                                     PreviewImageId = item?.ImagesId?.FirstOrDefault(),
-                                    Tags = item.Tags
+                                    Tags = item.Tags,
+                                    Products = item.Products.ConvertAll(x=> (ProductViewModel)x),
+                                    
                                 }
                             }
 
-                        });
-                    }
+                    });
                 }
             }
 
-            // TO DO Компания = [BAGS]
-            return Ok(new OutIndexPageViewModel<BagUserCardViewModel>() 
+            return Ok(new OutIndexPageViewModel<BagUserCardViewModel>()
             {
                 PageInfo = pageInfo,
                 Items = result
@@ -369,15 +360,15 @@ namespace FREEFOODSERVER.Controllers
         /// <returns></returns>
         [HttpPut("Bag/Feedback")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> PUTBagSetFeedback([FromBody]FeedbackCreateViewModel model )
+        public async Task<IActionResult> PUTBagSetFeedback([FromBody] FeedbackCreateViewModel model)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
 
-            Bag? bag ;
-            if ((bag = await _db.Bags.Include(x => x.Feedback).Include(x => x.Company).FirstOrDefaultAsync(x => x.Id == model.BagId)) == null) 
+            Bag? bag;
+            if ((bag = await _db.Bags.Include(x => x.Feedback).Include(x => x.Company).FirstOrDefaultAsync(x => x.Id == model.BagId)) == null)
                 return NotFound("Bag no Exist");
             if (bag == null) return BadRequest("Server Error");
             if (bag.IsDisabled) return NotFound("Bag no Exist");
@@ -417,7 +408,7 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> PUTFavorite([FromBody]Guid bagId)
+        public async Task<IActionResult> PUTFavorite([FromBody] Guid bagId)
         {
             var bag = await _db.Bags.FindAsync(bagId);
             if (bag == null) return NotFound("Bag not exist");
@@ -454,15 +445,11 @@ namespace FREEFOODSERVER.Controllers
             var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
 
-
-            Bag?[] tmp = Array.Empty<Bag>();
-            user.FavoriteBags.CopyTo(tmp);
             List<BagUserCardViewModel> result = new();
             var bags = _db.Bags.IgnoreAutoIncludes().AsNoTracking()
                 .Include(x => x.Company)
-                .Where(x =>user.FavoriteBags.Contains(x))
-                .ToList();    
-
+                .Where(x => user.FavoriteBags.Contains(x))
+                .ToList();
 
             foreach (var item in bags)
             {
@@ -477,7 +464,8 @@ namespace FREEFOODSERVER.Controllers
                         Id = item.Id,
                         Name = item.Name,
                         PreviewImageId = item?.ImagesId?.FirstOrDefault(),
-                        Tags = item.Tags
+                        Tags = item.Tags,
+                         Products = item.Products.ConvertAll(x => (ProductViewModel)x),
                     });
                 }
                 else
@@ -500,7 +488,8 @@ namespace FREEFOODSERVER.Controllers
                                     Count = item.Count,
                                     Name = item.Name,
                                     PreviewImageId = item?.ImagesId?.FirstOrDefault(),
-                                    Tags = item.Tags
+                                    Tags = item?.Tags ?? new(),
+                                    Products = item?.Products.ConvertAll(x => (ProductViewModel)x) ?? new(),
                                 }
                             }
 
@@ -515,20 +504,19 @@ namespace FREEFOODSERVER.Controllers
         /// <summary>
         /// Удаление из избранного 
         /// </summary>
-        /// <param name="model"></param>
         /// <returns></returns>
         [HttpDelete("Bag/Favorites")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> DELETEFavorite([FromBody]Guid guid)
+        public async Task<IActionResult> DELETEFavorite([FromBody] Guid bagId)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = (User?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
 
-            var bag = user.FavoriteBags.Find(x => x.Id == guid);
+            var bag = user.FavoriteBags.Find(x => x.Id == bagId);
             if (bag == null) return NotFound("Bag does not exist");
 
             if (!user.FavoriteBags.Remove(bag)) return BadRequest("Server Err");

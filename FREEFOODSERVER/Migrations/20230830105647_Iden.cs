@@ -181,6 +181,7 @@ namespace FREEFOODSERVER.Migrations
                     Tags = table.Column<List<string>>(type: "text[]", nullable: false),
                     Created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     AvgEvaluation = table.Column<float>(type: "real", nullable: true),
+                    Filters = table.Column<List<string>>(type: "text[]", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
@@ -196,6 +197,25 @@ namespace FREEFOODSERVER.Migrations
                         name: "FK_Bags_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    BagId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Categories = table.Column<List<string>>(type: "text[]", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Products_Bags_BagId",
+                        column: x => x.BagId,
+                        principalTable: "Bags",
                         principalColumn: "Id");
                 });
 
@@ -272,6 +292,11 @@ namespace FREEFOODSERVER.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Products_BagId",
+                table: "Products",
+                column: "BagId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserFeedbacks_FeedbackOwnerId",
                 table: "UserFeedbacks",
                 column: "FeedbackOwnerId");
@@ -299,6 +324,9 @@ namespace FREEFOODSERVER.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "UserFeedbacks");

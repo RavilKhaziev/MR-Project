@@ -20,9 +20,12 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
             public List<string> Tags { get; set; } = new();
 
-            public float? AvgEvaluation { get; set; } = null;
+            public float? AvgEvaluation { get; set; }
+
+            public List<Product.ProductViewModel> Products { get;set; } = new();
+
         }
 
-        public List<BagUserCardViewModel.Bag?> Bags { get; set; }
+        public List<Bag?> Bags { get; set; } = null!;
     }
 }

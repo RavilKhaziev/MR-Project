@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20230825112816_Iden")]
+    [Migration("20230830105647_Iden")]
     partial class Iden
     {
         /// <inheritdoc />
@@ -51,6 +51,10 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<List<string>>("Filters")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<List<string>>("ImagesId")
                         .HasColumnType("text[]");
 
@@ -78,6 +82,29 @@ namespace FREEFOODSERVER.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Bags");
+                });
+
+            modelBuilder.Entity("FREEFOODSERVER.Models.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("BagId")
+                        .HasColumnType("uuid");
+
+                    b.Property<List<string>>("Categories")
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BagId");
+
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("FREEFOODSERVER.Models.UserFeedback", b =>
@@ -367,6 +394,15 @@ namespace FREEFOODSERVER.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("FREEFOODSERVER.Models.Product", b =>
+                {
+                    b.HasOne("FREEFOODSERVER.Models.Bag", "Bag")
+                        .WithMany("Products")
+                        .HasForeignKey("BagId");
+
+                    b.Navigation("Bag");
+                });
+
             modelBuilder.Entity("FREEFOODSERVER.Models.UserFeedback", b =>
                 {
                     b.HasOne("FREEFOODSERVER.Models.Bag", "FeedbackOwner")
@@ -436,6 +472,8 @@ namespace FREEFOODSERVER.Migrations
             modelBuilder.Entity("FREEFOODSERVER.Models.Bag", b =>
                 {
                     b.Navigation("Feedback");
+
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("FREEFOODSERVER.Models.Users.Company", b =>

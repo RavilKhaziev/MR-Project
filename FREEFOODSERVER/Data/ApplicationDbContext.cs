@@ -13,10 +13,9 @@ namespace FREEFOODSERVER.Data
         public DbSet<User> UserInfos { get; set; }
         public DbSet<Admin> AdminInfos { get; set; }
         public DbSet<Company> CompanyInfos { get; set; }
-
-        public DbSet<IdentityUser> identityUsers { get; set; }
-        
+        public DbSet<IdentityUser> IdentityUsers { get; set; }
         public DbSet<UserFeedback> UserFeedbacks { get; set; } 
+        public DbSet<Product> Products { get; set; } 
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

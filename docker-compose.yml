@@ -30,6 +30,19 @@ services:
     POSTGRES_HOST_AUTH_METHOD: "trust"
     DB_DEV_HOST: localhost
     DB_HOST: db
+  postgres-images-db:
+   container_name: images-db
+   restart: always
+   image: postgres
+   networks:
+    - my-net
+   environment:
+    POSTGRES_DB: "usersdb"
+    POSTGRES_USER: "SA"
+    POSTGRES_PASSWORD: "avRK-LnF1n"
+    POSTGRES_HOST_AUTH_METHOD: "trust"
+    DB_DEV_HOST: localhost
+    DB_HOST: db
     
     
 networks:

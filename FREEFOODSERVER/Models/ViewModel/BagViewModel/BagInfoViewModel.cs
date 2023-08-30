@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography.X509Certificates;
 
 namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 {
@@ -32,6 +33,8 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public float? AvgEvaluation { get; set; }
 
+        public List<Product.ProductViewModel> Products { get; set; } = new();
+
         public static implicit operator BagInfoViewModel(Bag model)
         {
             return new()
@@ -47,6 +50,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
                 Created = model.Created,
                 IsDisabled = model.IsDisabled,
                 AvgEvaluation = model.AvgEvaluation,
+                Products = model.Products.ConvertAll(x => (Product.ProductViewModel)x),
             };
         }
 
