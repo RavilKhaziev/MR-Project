@@ -1,6 +1,6 @@
 ﻿using FREEFOODSERVER.Models.Users;
 using System.ComponentModel.DataAnnotations;
-using System.Data;
+using System.Linq;
 
 namespace FREEFOODSERVER.Models
 {
@@ -36,5 +36,18 @@ namespace FREEFOODSERVER.Models
         public List<UserFeedback> Feedback { get; set; } = new();
 
         public float? AvgEvaluation { get; set; }
+
+        public List<Product> Products { get; set; } = new();
+
+        public List<string> Filters {get; set; } = new();
+
+        public readonly static string[] BagTags =
+        {
+            "breakfast",
+            "lunch",
+            "dinner",
+            "vegan",
+            "vegetarian"
+        };
     }
 }

@@ -28,6 +28,8 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public DateTime? Created { get; set; }
 
+        public List<Product.ProductCreateViewModel>? Products { get; set; }
+
         //public static implicit operator Bag(BagCreateViewModel model)
         //{
         //    return new Bag()

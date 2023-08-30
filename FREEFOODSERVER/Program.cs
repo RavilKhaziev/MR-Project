@@ -19,15 +19,24 @@ namespace FREEFOODSERVER
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var connectionStringUsers = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            NpgsqlDataSourceBuilder npgBuilder = new NpgsqlDataSourceBuilder(connectionString);
-            using var dataSource = npgBuilder.Build();
+            NpgsqlDataSourceBuilder npgBuilderUser = new NpgsqlDataSourceBuilder(connectionStringUsers);
+            using var dataSourceUsers = npgBuilderUser.Build();
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseNpgsql(dataSource, builder => builder.EnableRetryOnFailure());
+                options.UseNpgsql(dataSourceUsers, builder => builder.EnableRetryOnFailure());
             });
+            // Add services to the container.
+
+            var connectionStringImages = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'ImagesConnection' not found.");
+            NpgsqlDataSourceBuilder npgBuilderImages = new NpgsqlDataSourceBuilder(connectionStringImages);
+            using var dataSourceImages = npgBuilderImages.Build();
+            builder.Services.AddDbContext<ImageDbContext>(options =>
+            {
+                options.UseNpgsql(dataSourceImages, builder => builder.EnableRetryOnFailure());
+            });
+            
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
@@ -113,7 +122,7 @@ namespace FREEFOODSERVER
                 int count = 0;
                 while (!db.Database.CanConnect())
                 { 
-                    logger.LogError($"Can't connect to DB. {connectionString}. Wait 5 sec.");
+                    logger.LogError($"Can't connect to DB. {connectionStringUsers}. Wait 5 sec.");
                     Task.Delay(500);
                     if (count > 100)
                         throw new Exception("Не возможно подключиться к БД");

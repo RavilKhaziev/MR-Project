@@ -4,13 +4,11 @@ using FREEFOODSERVER.Models.Users;
 using FREEFOODSERVER.Models.ViewModel;
 using FREEFOODSERVER.Models.ViewModel.BagViewModel;
 using FREEFOODSERVER.Models.ViewModel.Company;
+using FREEFOODSERVER.Models.ViewModel.Product;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
 using System.Security.Claims;
 
 namespace FREEFOODSERVER.Controllers
@@ -24,6 +22,8 @@ namespace FREEFOODSERVER.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ApplicationDbContext _db;
+
+        private static List<string> _filters { get; set; } = Bag.BagTags.Union(Product.Category).ToList();
         public CompanyController(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
@@ -63,7 +63,7 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> POSTRegistration([FromBody]CompanyRegistrationViewModel model)
+        public async Task<IActionResult> POSTRegistration([FromBody] CompanyRegistrationViewModel model)
         {
             if (!ModelState.IsValid) return BadRequest();
 
@@ -91,7 +91,7 @@ namespace FREEFOODSERVER.Controllers
                     await _userManager.DeleteAsync(user);
                     return BadRequest("Ошибка при выдаче роли");
                 }
-                await _signInManager.SignInAsync(user, true);
+                await _signInManager.SignInAsync(user, true).ConfigureAwait(false);
                 return Ok();
             }
             else
@@ -131,12 +131,12 @@ namespace FREEFOODSERVER.Controllers
         public async Task<Microsoft.AspNetCore.Identity.SignInResult> POSTLogin([FromBody] LoginViewModel model)
         {
             if (!ModelState.IsValid) return Microsoft.AspNetCore.Identity.SignInResult.Failed;
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user != null)
-                {
-                    await _signInManager.SignInAsync(user, false);
-                    return Microsoft.AspNetCore.Identity.SignInResult.Success;
-                }
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                await _signInManager.SignInAsync(user, false).ConfigureAwait(false);
+                return Microsoft.AspNetCore.Identity.SignInResult.Success;
+            }
             return Microsoft.AspNetCore.Identity.SignInResult.Failed;
         }
 
@@ -146,21 +146,13 @@ namespace FREEFOODSERVER.Controllers
         [HttpPost("Logout")]
         public async Task POSTLogout()
         {
-            await _signInManager.SignOutAsync();
+            await _signInManager.SignOutAsync().ConfigureAwait(false);
         }
 
         /// <summary>
         ///    Создаёт корзину для компании.
         /// </summary>
         /// <param name="model"> 
-        /// {
-        ///     string Name - Название бокса 
-        ///     string? Description - Описание бокса
-        ///     uint Count - Кол-во боксов
-        ///     double Cost - Цена бокса
-        ///     List<string>? Tags - Все тэги
-        ///     DateTime? Created - Время только UTC формат
-        /// }
         /// </param>
         /// <response code="400">
         /// Возникает при:
@@ -180,8 +172,11 @@ namespace FREEFOODSERVER.Controllers
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
 
             // var user = (Company?)await _userManager.FindByEmailAsync(email);
-            var user = await _db.CompanyInfos.Include(x => x.Bags).Where(x => x.Email == email).FirstOrDefaultAsync();
+            var user = await _db.CompanyInfos.IgnoreAutoIncludes()
+                .Include(x => x.Bags).ThenInclude(x => x.Products)
+                .Where(x => x.Email == email).FirstOrDefaultAsync();
             if (user == null) return NotFound("User no exist");
+
             user.Bags.Add(new()
             {
                 Cost = model.Cost,
@@ -193,9 +188,23 @@ namespace FREEFOODSERVER.Controllers
                 NumberOfViews = 0,
                 Tags = model.Tags ?? new(),
                 IsDisabled = model.IsDisabled ?? true,
-                Created = model.Created ?? DateTime.Now
+                Created = model.Created ?? DateTime.Now,
             });
-            await _db.SaveChangesAsync();
+
+            var bag = user.Bags.Last();
+
+            bag.Products = model.Products?.ConvertAll<Product>(x => new()
+            {
+                Categories = x.ProductCategories?.Intersect(Product.Category).ToList() ?? new(),
+                Name = x.ProductName,
+                Bag = user.Bags.Last()
+            }) ?? new();
+
+            foreach (var item in bag.Products)
+                if(item.Categories != null)
+                    bag.Filters = bag.Filters.Union(item.Categories).ToList();
+            
+            await _db.SaveChangesAsync().ConfigureAwait(false);
             return Ok();
         }
 
@@ -222,19 +231,26 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> POSTBagInfo([FromBody]Guid? bagId)
+        public async Task<IActionResult> POSTBagInfo([FromBody] Guid? bagId)
         {
+            //var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            //if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            //var user = (Company?)await _userManager.FindByEmailAsync(email);
+            //if (user == null) return NotFound("User no exist");
+
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-            var user = (Company?)await _userManager.FindByEmailAsync(email);
+            var user = await _db.CompanyInfos.IgnoreAutoIncludes().AsNoTracking()
+                .Include(x => x.Bags).ThenInclude(x => x.Products)
+                .Where(x => x.Email == email).FirstOrDefaultAsync();
             if (user == null) return NotFound("User no exist");
-            
+
             if (bagId == null)
                 return Ok(user.Bags.ConvertAll(x => (BagCompanyCardViewModel)x));
             else
             {
-                var bag = user.Bags.Find(x => x.Id == bagId);
-                if (bag == null) return NotFound("Bag no find");
+                Bag? bag;
+                if ((bag = user.Bags.Find(x => x.Id == bagId)) == null) return NotFound("Bag not found");
                 return Ok(new List<BagInfoViewModel>() { bag });
             }
         }
@@ -266,100 +282,12 @@ namespace FREEFOODSERVER.Controllers
             if (bag == null) return NotFound("Bag no exist");
             if (user.Bags.Remove(bag))
             {
-                await _userManager.UpdateAsync(user);
+                await _userManager.UpdateAsync(user).ConfigureAwait(false);
                 return Ok();
             }
             else
                 return BadRequest();
         }
-
-        /// <summary>
-        /// Возвращает все избранные боксы.
-        /// </summary>
-        /// <returns>
-        /// [   
-        ///     {
-        ///         public Guid Id - Id бокса
-        ///         string Name - Название бокса 
-        ///         string? PreviewImageId - изображение для предпросмотра
-        ///         uint Count - Кол-во боксов 
-        ///         double Cost - Цена бокса 
-        ///         bool IsFavorite - Находиться ли в избранном
-        ///     },...
-        /// ]
-        /// </returns>
-        /// <response code="400">
-        /// Возникает при:
-        ///     Неверный запрос.
-        ///     Ошибка в теле запрос или cookie(Нужно перезайти в аккаунт).
-        /// </response>
-        /// <response code="404">If the item is null</response>
-        /// <response code="200"></response>
-        //[HttpGet("Bag/Favorite")]
-        //[Produces("application/json")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IActionResult> GETBagFavorite()
-        //{
-        //    var email = User.FindFirst(ClaimTypes.Email)?.Value;
-        //    if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-        //    var user = await _userManager.FindByEmailAsync(email);
-        //    if (user == null) return NotFound("User no exist");
-        //    if (user.UserInfo == null) return NotFound("User no Init");
-        //    var bag = ((CompanyInfo)user.UserInfo).Bags.FindAll(x => x.IsFavorite).FirstOrDefault();
-        //    if (bag == null) return NotFound("Bag no exist");
-
-        //    return Ok(new BagCompanyCardViewModel()
-        //    {
-        //        Cost = bag.Cost,
-        //        Id = bag.Id,
-        //        Count = bag.Count,
-        //        Name = bag.Name,
-        //        PreviewImageId = bag.ImagesId?.FirstOrDefault(),
-        //        IsFavorite = bag.IsFavorite,
-        //    });
-        //}
-
-
-
-        /// <summary>
-        /// Устанавливает избранную бокса.
-        /// </summary>
-        /// <param name="model">
-        /// {
-        ///     Guid BagId - Id бокса
-        ///     bool IsFavorite - если true, то бокс избранный, иначе нет.
-        /// }
-        /// </param>
-        /// <returns></returns>
-        /// <response code="400">
-        /// Возникает при:
-        ///     Неверный запрос.
-        ///     Ошибка в теле запрос или cookie(Нужно перезайти в аккаунт).
-        /// </response>
-        /// <response code="404">If the item is null</response>
-        /// <response code="200"></response>
-        //[HttpPost("Bag/Favorite")]
-        //[Produces("application/json")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IActionResult> POSTBagSetFavorite([FromBody] BagSetFavoriteViewModel model)
-        //{
-        //    var email = User.FindFirst(ClaimTypes.Email)?.Value;
-        //    if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
-        //    var user = await _userManager.FindByEmailAsync(email);
-        //    if (user == null) return NotFound("User no exist");
-        //    if (user.UserInfo == null) return NotFound("User no Init");
-        //    var bag = ((CompanyInfo)user.UserInfo).Bags.Find(x => x.Id == model.BagId);
-        //    if (bag == null) return NotFound("Bag no exist");
-
-        //    bag.IsFavorite = model.IsFavorite;
-        //    await _userManager.UpdateAsync(user);
-
-        //    return Ok();
-        //}
 
         /// <summary>
         /// Возвращает описание профиля компании.
@@ -397,7 +325,7 @@ namespace FREEFOODSERVER.Controllers
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 AvgEvaluation = user.AvgEvaluation
-            }) ;
+            });
         }
 
 
@@ -410,16 +338,16 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> POSTEditProfile([FromBody]CompanyProfileEditViewModel model)
+        public async Task<IActionResult> POSTEditProfile([FromBody] CompanyProfileEditViewModel model)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if(!string.IsNullOrEmpty(model.ImagePreview)) user.ImagePreview = model.ImagePreview;
-            if(!string.IsNullOrEmpty(model.CompanyName)) user.CompanyName = model.CompanyName;
-            if(!string.IsNullOrEmpty(model.Discription)) user.Discription = model.Discription;
-            await _userManager.UpdateAsync(user);
+            if (!string.IsNullOrEmpty(model.ImagePreview)) user.ImagePreview = model.ImagePreview;
+            if (!string.IsNullOrEmpty(model.CompanyName)) user.CompanyName = model.CompanyName;
+            if (!string.IsNullOrEmpty(model.Discription)) user.Discription = model.Discription;
+            await _userManager.UpdateAsync(user).ConfigureAwait(false);
             return Ok(new CompanyProfileViewModel()
             {
                 CompanyName = user.CompanyName,
@@ -439,7 +367,7 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BagInfoViewModel))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> POSTBagEdit([FromBody]BagEditViewModel model)
+        public async Task<IActionResult> POSTBagEdit([FromBody] BagEditViewModel model)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
@@ -456,9 +384,143 @@ namespace FREEFOODSERVER.Controllers
             if (model.Tags != null) bag.Tags = model.Tags;
             if (model.IsDisabled != null) bag.IsDisabled = (bool)model.IsDisabled;
 
-            await _userManager.UpdateAsync(user);
+            await _userManager.UpdateAsync(user).ConfigureAwait(false);
             return Ok((BagInfoViewModel)bag);
         }
+
+        /// <summary>
+        /// Все доступные категории
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpGet("Bag/Products/Categories")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult GETProductsCategories()
+        {
+            return Ok(Product.Category);
+        }
+
+        /// <summary>
+        /// Редактирование боксов
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost("Bag/Products")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> POSTProductEdit([FromBody] ProductEditViewModel model)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = await _db.CompanyInfos.IgnoreAutoIncludes()
+                .Include(x => x.Bags).ThenInclude(x => x.Products)
+                .Where(x => x.Email == email).FirstOrDefaultAsync();
+            if (user == null) return NotFound("User no exist");
+
+            Bag? bag;
+            if ((bag = user.Bags.Find(x => x.Id == model.BagId)) == null) return NotFound("Bag not found");
+
+            //var bag = await _db.Bags.Include(x => x.Products).Where(x => x.Id == model.BagId).FirstOrDefaultAsync();
+            //if (bag == null) return BadRequest("Bag not exist");
+
+            var product = bag.Products.Find(x => x.Id == model.ProductId);
+            if (product == null) return BadRequest("Product not exist");
+
+            if (!string.IsNullOrEmpty(model.ProductName)) product.Name = model.ProductName;
+            product.Categories = model.ProductCategories?.Intersect(Product.Category).ToList();
+            if (product.Categories != null) 
+                bag.Filters = bag.Filters.Union(product.Categories).ToList();
+
+
+            await _db.SaveChangesAsync().ConfigureAwait(false);
+            return Ok("Saved");
+        }
+
+        /// <summary>
+        /// Добавление продуктов в бокс
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPut("Bag/Products")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PUTProductCreate([FromBody] ProductCreateViewModel model)
+        {
+            var bag = await _db.Bags.Include(x => x.Products).Where(x => x.Id == model.BagId).FirstOrDefaultAsync();
+            if (bag == null) return BadRequest("Bag not exist");
+
+            IEnumerable<string>? cat = model.ProductCategories != null ?  Product.Category.Intersect(model.ProductCategories) : null;
+
+            bag.Products.Add(new Product()
+            {
+                Name = model.ProductName,
+                Categories = cat?.ToList(),
+                Bag = bag
+            });
+            if(cat != null) 
+                bag.Filters = bag.Filters.Union(cat).ToList();
+
+            await _db.SaveChangesAsync().ConfigureAwait(false);
+            return Ok();
+        }
+
+        /// <summary>
+        /// Удаление продуктов
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpDelete("Bag/Products")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DELETEProductRemove([FromBody] ProductDeleteViewModel model)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
+            var user = await _db.CompanyInfos.IgnoreAutoIncludes()
+                .Include(x => x.Bags)
+                .ThenInclude(x => x.Products)
+                .Where(x => x.Email == email).FirstOrDefaultAsync();
+            if (user == null) return NotFound("User no exist");
+
+            Bag? bag;
+            if ((bag = user.Bags.Find(x => x.Id == model.BagId)) == null) return NotFound("Bag not found");
+
+            var product = bag.Products.Find(x => x.Id == model.ProductId);
+            if (product == null) return NotFound("Product not exist");
+
+            bag.Products.Remove(product);
+            // Пересчитываем все теги и категории продуктов
+            var filter = bag.Tags.AsQueryable();
+            foreach (var item in bag.Products)
+            {
+                filter = filter.Union(item.Categories ?? new());
+            }
+            bag.Filters =  filter.ToList();
+
+            await _db.SaveChangesAsync().ConfigureAwait(false);
+            return Ok();
+        }
+
+
+        /// <summary>
+        /// Все доступные тэги для бокса
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpGet("Bag/Tags")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult GETBabTags()
+        {
+            return Ok(Bag.BagTags);
+        }
+
 
     }
 }
