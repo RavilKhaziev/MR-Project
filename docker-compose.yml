@@ -1,0 +1,54 @@
+version: '3.4'
+services:
+  webserver:
+    container_name: webserver
+    image: ${DOCKER_REGISTRY-}webserver
+    build:
+      context: .
+      dockerfile: FREEFOODSERVER/Dockerfile
+    networks:
+     - my-net
+    volumes:
+     - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+     - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+    depends_on:
+     - postgres-server-db
+    ports:
+     - "61752:80"
+  postgres-server-db:
+   container_name: user-db
+   restart: always
+   image: postgres:16-alpine
+   networks:
+    - my-net
+   ports:
+   - "5532:5432"
+   environment:
+    POSTGRES_DB: "usersdb"
+    POSTGRES_USER: "SA"
+    POSTGRES_PASSWORD: "avRK-LnF1n"
+    POSTGRES_HOST_AUTH_METHOD: "trust"
+    DB_DEV_HOST: localhost
+    DB_HOST: db
+  postgres-images-db:
+   container_name: images-db
+   restart: always
+   image: postgres:16-alpine
+   networks:
+    - my-net
+   environment:
+    POSTGRES_DB: "usersdb"
+    POSTGRES_USER: "SA"
+    POSTGRES_PASSWORD: "avRK-LnF1n"
+    POSTGRES_HOST_AUTH_METHOD: "trust"
+    DB_DEV_HOST: localhost
+    DB_HOST: db
+    
+    
+networks:
+  my-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.0.0/28
