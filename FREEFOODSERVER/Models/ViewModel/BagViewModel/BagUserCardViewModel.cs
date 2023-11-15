@@ -12,7 +12,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
             public string Name { get; set; } = null!;
 
-            public string? PreviewImageId { get; set; }
+            public Guid? PreviewImageId { get; set; }
 
             public uint Count { get; set; }
 

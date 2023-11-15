@@ -5,7 +5,7 @@
     <DockerTargetOS>Linux</DockerTargetOS>
     <ProjectGuid>f7fce57a-8905-466d-bacb-8f86fa3d27ec</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
-    <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
+    <DockerServiceUrl>{Scheme}://localhost:61742</DockerServiceUrl>
     <DockerServiceName>webserver</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>

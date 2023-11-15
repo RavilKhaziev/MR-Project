@@ -19,7 +19,9 @@ namespace FREEFOODSERVER.Models
 
         public string? Description { get; set; }
 
-        public List<string>? ImagesId { get; set; }
+        public List<Guid>? ImagesId { get; set; }
+
+        public Guid? ImagePreview { get; set; }
 
         [Required]
         public uint Count { get; set; } = 0;

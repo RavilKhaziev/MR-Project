@@ -16,7 +16,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
         /// <summary>
         /// Первое изображение в списке - превью
         /// </summary>
-        public List<string>? ImagesId { get; set; }
+        public List<string>? Images { get; set; }
 
         [Required]
         public uint Count { get; set; } = 0;

@@ -217,7 +217,7 @@ namespace FREEFOODSERVER.Controllers
                             Count = x.Count,
                             Id = x.Id,
                             Name = x.Name,
-                            PreviewImageId = x.ImagesId?.FirstOrDefault(),
+                            PreviewImageId = x.ImagePreview,
                             Tags = x.Tags,
                             Products = x.Products.ConvertAll(x => (ProductViewModel)x)
                         })

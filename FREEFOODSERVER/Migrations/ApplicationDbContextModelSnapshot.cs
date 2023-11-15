@@ -52,8 +52,11 @@ namespace FREEFOODSERVER.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<List<string>>("ImagesId")
-                        .HasColumnType("text[]");
+                    b.Property<Guid?>("ImagePreview")
+                        .HasColumnType("uuid");
+
+                    b.Property<List<Guid>>("ImagesId")
+                        .HasColumnType("uuid[]");
 
                     b.Property<bool>("IsDisabled")
                         .HasColumnType("boolean");
@@ -359,8 +362,8 @@ namespace FREEFOODSERVER.Migrations
                     b.Property<string>("Discription")
                         .HasColumnType("text");
 
-                    b.Property<string>("ImagePreview")
-                        .HasColumnType("text");
+                    b.Property<Guid?>("ImagePreview")
+                        .HasColumnType("uuid");
 
                     b.HasDiscriminator().HasValue("Company");
                 });

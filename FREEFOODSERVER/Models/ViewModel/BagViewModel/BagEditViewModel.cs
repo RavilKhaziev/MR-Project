@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FREEFOODSERVER.Models.ViewModel.Image;
+using System.ComponentModel.DataAnnotations;
 
 namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 {
@@ -13,7 +14,9 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
         /// <summary>
         /// Первое изображение в списке - превью
         /// </summary>
-        public List<string>? ImagesId { get; set; }
+        public List<ImageEditViewModel>? Images { get; set; }
+
+        public ImageEditViewModel? ImagePreview { get; set; }
 
         public uint? Count { get; set; }
 

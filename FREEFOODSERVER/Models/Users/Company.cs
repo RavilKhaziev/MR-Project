@@ -10,7 +10,7 @@ namespace FREEFOODSERVER.Models.Users
 
         public List<Bag> Bags { get; set; } = new List<Bag>();
 
-        public string? ImagePreview { get; set; } 
+        public Guid? ImagePreview { get; set; } 
 
         public float? AvgEvaluation { get; set; }
 

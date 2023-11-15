@@ -7,7 +7,7 @@
         /// </summary>
         public string? Id { get; set; }
 
-        public string? ImagePreview { get; set; }
+        public Guid? ImagePreview { get; set; }
 
         public string CompanyName { get; set; } = null!;
 
