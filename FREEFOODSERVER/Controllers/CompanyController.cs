@@ -5,6 +5,7 @@ using FREEFOODSERVER.Models.ViewModel;
 using FREEFOODSERVER.Models.ViewModel.BagViewModel;
 using FREEFOODSERVER.Models.ViewModel.Company;
 using FREEFOODSERVER.Models.ViewModel.Product;
+using FREEFOODSERVER.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -21,20 +22,24 @@ namespace FREEFOODSERVER.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<IdentityUser> _signInManager;
+        
         private readonly ApplicationDbContext _db;
+        private readonly ImageManager _imageManager;
 
         private static List<string> _filters { get; set; } = Bag.BagTags.Union(Product.Category).ToList();
         public CompanyController(
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<IdentityUser> signInManager,
-            ApplicationDbContext db
+            ApplicationDbContext db,
+            ImageManager imageManager
             )
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
             _db = db;
+            _imageManager = imageManager;
         }
 
 
@@ -132,12 +137,10 @@ namespace FREEFOODSERVER.Controllers
         {
             if (!ModelState.IsValid) return Microsoft.AspNetCore.Identity.SignInResult.Failed;
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user != null)
-            {
-                await _signInManager.SignInAsync(user, false).ConfigureAwait(false);
-                return Microsoft.AspNetCore.Identity.SignInResult.Success;
-            }
-            return Microsoft.AspNetCore.Identity.SignInResult.Failed;
+            if (user == null) 
+                return Microsoft.AspNetCore.Identity.SignInResult.Failed;
+            await _signInManager.SignInAsync(user, false).ConfigureAwait(false);
+            return Microsoft.AspNetCore.Identity.SignInResult.Success;
         }
 
         /// <summary>
@@ -183,7 +186,6 @@ namespace FREEFOODSERVER.Controllers
                 Company = user,
                 Count = model.Count,
                 Description = model.Description,
-                ImagesId = model.ImagesId,
                 Name = model.Name,
                 NumberOfViews = 0,
                 Tags = model.Tags ?? new(),
@@ -193,17 +195,37 @@ namespace FREEFOODSERVER.Controllers
 
             var bag = user.Bags.Last();
 
+            if (model.Images != null && model.Images.Count >= 1)
+            {
+                var images = model.Images.ConvertAll(
+                    x => new ImageManager.AddImage()
+                    {
+                        Name = string.Concat(user.Id.ToString(), "_", bag.Id.ToString(), "_", bag.Id.GetHashCode()),
+                        Image = _imageManager.GetImageFromString(x)
+                    });
+
+                var imagePrew = await _imageManager.SaveImageAsync(images.First());
+
+                bag.ImagePreview = imagePrew;
+
+                if (images.Count >= 2)
+                {
+                    var imagesList = await _imageManager.SaveImageRangeAsync(images.Take(1..));
+                    bag.ImagesId = imagesList;
+                }
+            }
+
             bag.Products = model.Products?.ConvertAll<Product>(x => new()
             {
                 Categories = x.ProductCategories?.Intersect(Product.Category).ToList() ?? new(),
                 Name = x.ProductName,
-                Bag = user.Bags.Last()
+                Bag = user.Bags.Last(),
             }) ?? new();
 
             foreach (var item in bag.Products)
-                if(item.Categories != null)
+                if (item.Categories != null)
                     bag.Filters = bag.Filters.Union(item.Categories).ToList();
-            
+
             await _db.SaveChangesAsync().ConfigureAwait(false);
             return Ok();
         }
@@ -214,7 +236,8 @@ namespace FREEFOODSERVER.Controllers
         /// <param name="bagId"> Id запрашиваемой корзины.
         ///      !Внимание!
         ///         Если в теле запроса передать Id бокса,
-        ///         то будет возвращено более детальное описание бокса. 
+        ///         то будет возвращено более детальное описание бокса.
+        ///         Если не передать то возвратит все боксы.
         ///      !Внимание!
         /// </param>
         /// <returns>
@@ -272,6 +295,7 @@ namespace FREEFOODSERVER.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        // TO DO REMOVE IMAGES 
         public async Task<IActionResult> DELETEBag([FromQuery] Guid bagId)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -317,6 +341,7 @@ namespace FREEFOODSERVER.Controllers
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
+
             return Ok(new CompanyProfileViewModel()
             {
                 CompanyName = user.CompanyName,
@@ -344,7 +369,28 @@ namespace FREEFOODSERVER.Controllers
             if (string.IsNullOrEmpty(email)) return BadRequest("Email Error");
             var user = (Company?)await _userManager.FindByEmailAsync(email);
             if (user == null) return NotFound("User no exist");
-            if (!string.IsNullOrEmpty(model.ImagePreview)) user.ImagePreview = model.ImagePreview;
+            if (!string.IsNullOrEmpty(model.ImagePreview))
+            {
+                Image image;
+                try
+                {
+                    image = Image.Load(Convert.FromBase64String(model.ImagePreview));
+                }
+                catch (Exception)
+                {
+                    return BadRequest("Error Image");
+                }
+
+                if (user.ImagePreview != null) await _imageManager.RemoveImageAsync((Guid)user.ImagePreview);
+
+
+                user.ImagePreview = await _imageManager.SaveImageAsync(new()
+                {
+                    Image = image,
+                    Name = user.Id.ToString(),
+                });
+            }
+
             if (!string.IsNullOrEmpty(model.CompanyName)) user.CompanyName = model.CompanyName;
             if (!string.IsNullOrEmpty(model.Discription)) user.Discription = model.Discription;
             await _userManager.UpdateAsync(user).ConfigureAwait(false);
@@ -380,7 +426,19 @@ namespace FREEFOODSERVER.Controllers
             if (!string.IsNullOrEmpty(model.Name)) bag.Name = model.Name;
             if (model.Count != null) bag.Count = (uint)model.Count;
             if (model.Cost != null) bag.Cost = (double)model.Cost;
-            if (model.ImagesId != null) bag.ImagesId = model.ImagesId;
+            if (model.Images != null)
+            {
+                bag.ImagesId = await _imageManager.EditImageRangeAsync(model.Images.ConvertAll<ImageManager.EditImage>(
+                    x => new()
+                    {
+                        Id = x.Id,
+                        Image = x.Image,
+                    }));
+            }
+            if (model.ImagePreview != null)
+            {
+                bag.ImagePreview = await _imageManager.EditImageAsync(new() { Id = model.ImagePreview.Id, Image = model.ImagePreview.Image });
+            }
             if (model.Tags != null) bag.Tags = model.Tags;
             if (model.IsDisabled != null) bag.IsDisabled = (bool)model.IsDisabled;
 
@@ -431,7 +489,7 @@ namespace FREEFOODSERVER.Controllers
 
             if (!string.IsNullOrEmpty(model.ProductName)) product.Name = model.ProductName;
             product.Categories = model.ProductCategories?.Intersect(Product.Category).ToList();
-            if (product.Categories != null) 
+            if (product.Categories != null)
                 bag.Filters = bag.Filters.Union(product.Categories).ToList();
 
 
@@ -453,7 +511,7 @@ namespace FREEFOODSERVER.Controllers
             var bag = await _db.Bags.Include(x => x.Products).Where(x => x.Id == model.BagId).FirstOrDefaultAsync();
             if (bag == null) return BadRequest("Bag not exist");
 
-            IEnumerable<string>? cat = model.ProductCategories != null ?  Product.Category.Intersect(model.ProductCategories) : null;
+            IEnumerable<string>? cat = model.ProductCategories != null ? Product.Category.Intersect(model.ProductCategories) : null;
 
             bag.Products.Add(new Product()
             {
@@ -461,7 +519,7 @@ namespace FREEFOODSERVER.Controllers
                 Categories = cat?.ToList(),
                 Bag = bag
             });
-            if(cat != null) 
+            if (cat != null)
                 bag.Filters = bag.Filters.Union(cat).ToList();
 
             await _db.SaveChangesAsync().ConfigureAwait(false);
@@ -500,7 +558,7 @@ namespace FREEFOODSERVER.Controllers
             {
                 filter = filter.Union(item.Categories ?? new());
             }
-            bag.Filters =  filter.ToList();
+            bag.Filters = filter.ToList();
 
             await _db.SaveChangesAsync().ConfigureAwait(false);
             return Ok();

@@ -15,7 +15,9 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
         /// <summary>
         /// Первое изображение в списке - превью
         /// </summary>
-        public List<string>? ImagesId { get; set; }
+        public List<Guid>? ImagesId { get; set; }
+
+        public Guid? PreviewImage { get; set; }
 
         [Required]
         public uint Count { get; set; } = 0;
@@ -51,6 +53,8 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
                 IsDisabled = model.IsDisabled,
                 AvgEvaluation = model.AvgEvaluation,
                 Products = model.Products.ConvertAll(x => (Product.ProductViewModel)x),
+                PreviewImage = model.ImagePreview
+
             };
         }
 

@@ -9,7 +9,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
 
         public string Name { get; set; } = null!;
 
-        public string? PreviewImageId { get; set; }
+        public Guid? PreviewImageId { get; set; }
 
         public uint Count { get; set; }
 
@@ -27,7 +27,7 @@ namespace FREEFOODSERVER.Models.ViewModel.BagViewModel
                 Cost = model.Cost,
                 Count = model.Count,
                 Id = model.Id,
-                PreviewImageId = model.ImagesId?.FirstOrDefault(),
+                PreviewImageId = model.ImagePreview,
                 Tags = model.Tags,
                 AvgEvaluation = model.AvgEvaluation,
                 IsDisabled = model.IsDisabled,

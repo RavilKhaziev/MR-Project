@@ -14,11 +14,11 @@ services:
     depends_on:
      - postgres-server-db
     ports:
-     - "61742:80"
+     - "61752:80"
   postgres-server-db:
    container_name: user-db
    restart: always
-   image: postgres
+   image: postgres:16-alpine
    networks:
     - my-net
    ports:
@@ -33,7 +33,7 @@ services:
   postgres-images-db:
    container_name: images-db
    restart: always
-   image: postgres
+   image: postgres:16-alpine
    networks:
     - my-net
    environment:

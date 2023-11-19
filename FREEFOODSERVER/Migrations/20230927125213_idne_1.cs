@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FREEFOODSERVER.Migrations
 {
     /// <inheritdoc />
-    public partial class Iden : Migration
+    public partial class idne_1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,7 +36,7 @@ namespace FREEFOODSERVER.Migrations
                     BannedCount = table.Column<int>(type: "integer", nullable: true),
                     CompanyName = table.Column<string>(type: "text", nullable: true),
                     Discription = table.Column<string>(type: "text", nullable: true),
-                    ImagePreview = table.Column<string>(type: "text", nullable: true),
+                    ImagePreview = table.Column<Guid>(type: "uuid", nullable: true),
                     AvgEvaluation = table.Column<float>(type: "real", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -174,7 +174,8 @@ namespace FREEFOODSERVER.Migrations
                     CompanyId = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    ImagesId = table.Column<List<string>>(type: "text[]", nullable: true),
+                    ImagesId = table.Column<List<Guid>>(type: "uuid[]", nullable: true),
+                    ImagePreview = table.Column<Guid>(type: "uuid", nullable: true),
                     Count = table.Column<long>(type: "bigint", nullable: false),
                     Cost = table.Column<double>(type: "double precision", nullable: false),
                     NumberOfViews = table.Column<decimal>(type: "numeric(20,0)", nullable: false),

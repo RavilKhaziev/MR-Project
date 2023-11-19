@@ -1,6 +1,7 @@
 using FREEFOODSERVER.Areas.Identity;
 using FREEFOODSERVER.Data;
 using FREEFOODSERVER.Models.Users;
+using FREEFOODSERVER.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
@@ -39,6 +40,8 @@ namespace FREEFOODSERVER
             
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+            builder.Services.AddMemoryCache();
+            
 
             builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => {
                 options.SignIn.RequireConfirmedAccount = false;
@@ -67,6 +70,8 @@ namespace FREEFOODSERVER
             
 
             builder.Services.AddCors();
+
+            builder.Services.AddTransient<ImageManager>();
             var app = builder.Build();
 
             app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -116,30 +121,54 @@ namespace FREEFOODSERVER
             {
                 var services = scope.ServiceProvider;
                 var logger = services.GetRequiredService<ILogger<Program>>();
-                var db = services.GetRequiredService<ApplicationDbContext>();
+                var db_user = services.GetRequiredService<ApplicationDbContext>();
+                var db_image = services.GetRequiredService<ImageDbContext>();
                 var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
                 var rolesManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-                int count = 0;
-                while (!db.Database.CanConnect())
-                { 
-                    logger.LogError($"Can't connect to DB. {connectionStringUsers}. Wait 5 sec.");
-                    Task.Delay(500);
-                    if (count > 100)
-                        throw new Exception("Не возможно подключиться к БД");
-                }
-                try
                 {
-                    db.Database.Migrate(); 
+                    int count = 0;
+                    while (!db_user.Database.CanConnect())
+                    {
+                        logger.LogError($"Can't connect to DB. {connectionStringUsers}. Wait 5 sec.");
+                        Task.Delay(500);
+                        if (count > 100)
+                            throw new Exception("Не возможно подключиться к БД");
+                    }
+                    try
+                    {
+                        db_user.Database.Migrate();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "An error occurred while seeding the database.");
+                    }
+                    Console.WriteLine(rolesManager.Roles.ToList().Count);
+                    var result = RoleInitializer.InitializeAsync(userManager, rolesManager);
+                    result.Wait();
+                    db_user.SaveChanges();
+                    Console.WriteLine(rolesManager.Roles.ToList().Count);
                 }
-                catch (Exception ex)
+
+                // Images 
                 {
-                    logger.LogError(ex, "An error occurred while seeding the database.");
+                    int count = 0;
+                    while (!db_image.Database.CanConnect())
+                    {
+                        logger.LogError($"Can't connect to DB. {connectionStringUsers}. Wait 5 sec.");
+                        Task.Delay(500);
+                        if (count > 100)
+                            throw new Exception("Не возможно подключиться к БД");
+                    }
+                    try
+                    {
+                        db_image.Database.Migrate();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "An error occurred while seeding the database.");
+                    }
+                    db_image.SaveChanges();
                 }
-                Console.WriteLine(rolesManager.Roles.ToList().Count);
-                var result = RoleInitializer.InitializeAsync(userManager, rolesManager);
-                result.Wait();
-                db.SaveChanges();
-                Console.WriteLine(rolesManager.Roles.ToList().Count);
             }
 
             app.Run();
