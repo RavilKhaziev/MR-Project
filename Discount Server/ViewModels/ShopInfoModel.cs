@@ -3,24 +3,32 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Discount_Server.ViewModels
 {
+    /// <summary>
+    /// Информация о магазине
+    /// </summary>
     public class ShopInfoModel
     {
-
-        // Код магазина - случайное число
+        /// <summary>
+        /// Код магазина - случайное число
+        /// </summary>
         public int Shop_Code { get; set; }
 
-        // Имя магазина
+        /// <summary>
+        /// Имя магазина
+        /// </summary>
         public string? Name { get; set; } = null!;
 
-        // Ссылка на главную страницу магазина  
-        public string Url { get; set; } = null!;
+        /// <summary>
+        /// Ссылка на главную страницу магазина  
+        /// </summary>
+        public string? Url { get; set; } = null!;
 
         static public Converter<ShopInfoModel, ShopInfo> ToShopInfo =
            (model) => new ShopInfo()
            {
-               Name = model.Name,
+               Shop_Name = model.Name,
                Shop_Code = model.Shop_Code,
-               Url = model.Url,
+               Url = model.Url
            };
     }
 

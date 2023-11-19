@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Discount Server/discount.db
+/Discount Server/discount.db-shm
+/Discount Server/discount.db-wal
